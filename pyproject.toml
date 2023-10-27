@@ -1,8 +1,8 @@
 [tool.poetry]
 name = "innohassle-rooms"
 version = "0.1.0"
-description = ""
-authors = []
+description = "A service for task management in rooms"
+authors = ["Maxim Fomin <m.fomin@innopolis.university>"]
 readme = "README.md"
 packages = []
 
