@@ -20,3 +20,22 @@ class Invitation(Base, IdMixin):
 
     sender: Mapped["User"] = relationship()
     room: Mapped["Room"] = relationship(back_populates="invitations")
+
+    def __init__(
+        self,
+        id_: int = None,
+        sender_id: int = None,
+        adressee_id: int = None,
+        room_id: int = None,
+        sender: "User" = None,
+        room: "Room" = None,
+    ):
+        super().__init__(
+            id=id_, sender_id=sender_id, adressee_id=adressee_id, room_id=room_id, sender=sender, room=room
+        )
+
+    def __repr__(self):
+        return (
+            f"Invitation(id={self.id}, sender_id={self.sender_id}, adressee_id={self.adressee_id}, "
+            f"room_id={self.room_id})"
+        )

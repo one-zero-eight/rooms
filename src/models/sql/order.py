@@ -16,4 +16,10 @@ class Order(Base, IdMixin):
 
     users: Mapped[list["User"]] = relationship(back_populates="orders", secondary="executors", viewonly=True)
     executors: Mapped[list["Executor"]] = relationship(back_populates="order")
-    tasks: Mapped[list["Task"]] = relationship(back_populates="order")
+    tasks: Mapped[set["Task"]] = relationship(back_populates="order")
+
+    def __init__(self, id_: int = None):
+        super().__init__(id=id_)
+
+    def __repr__(self):
+        return f"Order(id={self.id})"

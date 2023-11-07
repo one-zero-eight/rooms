@@ -24,3 +24,16 @@ class Executor(Base):
 
     user: Mapped["User"] = relationship(back_populates="executors")
     order: Mapped["Order"] = relationship(back_populates="executors")
+
+    def __init__(
+        self,
+        user_id: int = None,
+        order_id: int = None,
+        order_number: int = None,
+        user: "User" = None,
+        order: "Order" = None,
+    ):
+        super().__init__(user_id=user_id, order_id=order_id, order_number=order_number, user=user, order=order)
+
+    def __repr__(self):
+        return f"Executor(user_id={self.user_id}, order_id={self.order_id}, order_number={self.order_number})"

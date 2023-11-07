@@ -26,3 +26,18 @@ class User(Base):
     # invitations: Mapped[list["Invitation"]] = relationship()
     orders: Mapped[list["Order"]] = relationship(back_populates="users", secondary="executors", viewonly=True)
     executors: Mapped[list["Executor"]] = relationship(back_populates="user")
+
+    def __init__(
+        self,
+        telegram_id: int = None,
+        room_id: int = None,
+        register_datetime: datetime = None,
+        room: "Room" = None,
+    ):
+        super().__init__(telegram_id=telegram_id, room_id=room_id, register_datetime=register_datetime, room=room)
+
+    def __repr__(self):
+        return (
+            f"User(telegram_id={self.telegram_id}, room_id={self.room_id}, "
+            f"register_datetime={repr(self.register_datetime)})"
+        )
