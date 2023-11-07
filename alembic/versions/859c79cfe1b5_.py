@@ -52,16 +52,11 @@ def upgrade() -> None:
         "executors",
         sa.Column("user_id", sa.Integer(), autoincrement=False, nullable=False),
         sa.Column("order_id", sa.Integer(), autoincrement=False, nullable=False),
-        sa.Column(
-            "order_number",
-            sa.Integer(),
-            sa.Identity(always=False, start=1, increment=1),
-            autoincrement=True,
-            nullable=False,
-        ),
+        sa.Column("order_number", sa.Integer(), nullable=False),
         sa.ForeignKeyConstraint(["order_id"], ["orders.id"], onupdate="cascade", ondelete="cascade"),
         sa.ForeignKeyConstraint(["user_id"], ["users.telegram_id"], onupdate="cascade", ondelete="cascade"),
         sa.PrimaryKeyConstraint("user_id", "order_id"),
+        sa.UniqueConstraint("order_id", "order_number"),
     )
     op.create_table(
         "invitations",
