@@ -16,14 +16,12 @@ pydantic-settings = "^2.0.3"
 alembic = "^1.12.1"
 wheel = "^0.41.3"
 psycopg2-binary = "^2.9.9"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.0.277"
 black = "^23.3.0"
 pre-commit = "^3.3.3"
-
-[tool.poetry.group.test.dependencies]
-pytest = "^7.4.0"
 
 [tool.pytest.ini_options]
 pythonpath = "."
