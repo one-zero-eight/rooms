@@ -1,3 +1,4 @@
+import os
 from functools import lru_cache
 from typing import Annotated
 
@@ -15,7 +16,7 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings():
-    return Settings()
+    return Settings(_env_file=os.getenv("DOTENV_PATH", ".env"))
 
 
 SETTINGS_DEPENDENCY = Annotated[Settings, Depends(get_settings)]

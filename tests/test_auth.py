@@ -1,12 +1,10 @@
 from datetime import timedelta, datetime
 
-import pytest
 from fastapi.testclient import TestClient
 
-from src.api.auth.utils import create_jwt, decode_jwt
-from src.config import get_settings
-from src.main import app as main_app
 from src.api.auth.utils import BOT_ACCESS_DEPENDENCY
+from src.api.auth.utils import create_jwt, decode_jwt
+from src.main import app as main_app
 
 
 @main_app.get("/test_bot_access", dependencies=[BOT_ACCESS_DEPENDENCY])
@@ -17,16 +15,6 @@ def bot_access():
 client = TestClient(main_app)
 
 
-@pytest.fixture()
-def replace_secret():
-    settings = get_settings()
-    key = settings.SECRET_KEY
-    settings.SECRET_KEY = "12345"
-    yield
-    settings.SECRET_KEY = key
-
-
-@pytest.mark.usefixtures("replace_secret")
 def test_jwt_generation():
     token = create_jwt({"sub": "tgbot"}, expires_delta=timedelta(minutes=20))
     decoded = decode_jwt(token)

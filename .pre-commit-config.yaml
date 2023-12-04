@@ -49,7 +49,7 @@ repos:
         stages:
           - pre-commit
           - pre-push
-        entry: pytest -v
+        entry: env DOTENV_PATH="example.env" pytest -v
         language: system
         pass_filenames: false
         always_run: true

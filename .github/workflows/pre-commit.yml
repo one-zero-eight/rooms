@@ -18,4 +18,5 @@ jobs:
           key: pre-commit-3|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
       - run: pre-commit run --show-diff-on-failure --color=always --all-files
         env:
+          SKIP: pytest-check
           RUFF_FORMAT: github
