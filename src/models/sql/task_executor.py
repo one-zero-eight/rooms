@@ -10,7 +10,7 @@ if typing.TYPE_CHECKING:
     from src.models.sql.order import Order
 
 
-class Executor(Base):
+class TaskExecutor(Base):
     __tablename__ = "executors"
     __table_args__ = (UniqueConstraint("order_id", "order_number"),)
 
@@ -36,4 +36,4 @@ class Executor(Base):
         super().__init__(user_id=user_id, order_id=order_id, order_number=order_number, user=user, order=order)
 
     def __repr__(self):
-        return f"Executor(user_id={self.user_id}, order_id={self.order_id}, order_number={self.order_number})"
+        return f"TaskExecutor(user_id={self.user_id}, order_id={self.order_id}, order_number={self.order_number})"

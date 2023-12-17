@@ -12,7 +12,7 @@ if typing.TYPE_CHECKING:
 
     # from src.models.sql.invitation import Invitation
     from src.models.sql.order import Order
-    from src.models.sql.executor import Executor
+    from src.models.sql.task_executor import TaskExecutor
 
 
 class User(Base):
@@ -25,7 +25,7 @@ class User(Base):
     room: Mapped["Room"] = relationship(back_populates="users")
     # invitations: Mapped[list["Invitation"]] = relationship()
     orders: Mapped[list["Order"]] = relationship(back_populates="users", secondary="executors", viewonly=True)
-    executors: Mapped[list["Executor"]] = relationship(back_populates="user")
+    executors: Mapped[list["TaskExecutor"]] = relationship(back_populates="user")
 
     def __init__(
         self,

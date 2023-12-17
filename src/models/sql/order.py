@@ -8,14 +8,14 @@ from src.models.sql.mixins import IdMixin
 if typing.TYPE_CHECKING:
     from src.models.sql.user import User
     from src.models.sql.task import Task
-    from src.models.sql.executor import Executor
+    from src.models.sql.task_executor import TaskExecutor
 
 
 class Order(Base, IdMixin):
     __tablename__ = "orders"
 
     users: Mapped[list["User"]] = relationship(back_populates="orders", secondary="executors", viewonly=True)
-    executors: Mapped[list["Executor"]] = relationship(back_populates="order")
+    executors: Mapped[list["TaskExecutor"]] = relationship(back_populates="order")
     tasks: Mapped[set["Task"]] = relationship(back_populates="order")
 
     def __init__(self, id_: int = None):
