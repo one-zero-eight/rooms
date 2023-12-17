@@ -37,4 +37,4 @@ def test_bot_access_denied():
 
     token = create_jwt({"sub": "me"}, expires_delta=timedelta(seconds=30))
     response = client.get("/test_bot_access", headers={"X-Token": token})
-    assert response.status_code == 401
+    assert response.status_code == 403

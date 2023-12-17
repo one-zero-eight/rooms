@@ -34,7 +34,7 @@ def verify_bot_access(x_token: Annotated[str | None, Header()] = None):
     try:
         data = decode_jwt(x_token)
         if not data["sub"] == "tgbot":
-            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid token for bot's access")
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "Invalid token for bot's access")
         return True
     except ExpiredSignatureError:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Access token has expired")
