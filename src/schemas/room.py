@@ -1,13 +1,13 @@
 from src.schemas.utils import MyBaseModel
 
 
-class BaseRoom(MyBaseModel):
+class BaseRoomSchema(MyBaseModel):
     name: str
 
 
-class CreateRoom(BaseRoom):
+class CreateRoomSchema(BaseRoomSchema):
     pass
 
 
-class Room(BaseRoom):
+class RoomSchema(BaseRoomSchema):
     id: int
