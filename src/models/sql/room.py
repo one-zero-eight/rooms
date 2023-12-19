@@ -16,9 +16,9 @@ class Room(Base, IdMixin):
 
     name: Mapped[str]
 
-    users: Mapped[list["User"]] = relationship(back_populates="room")
-    invitations: Mapped[list["Invitation"]] = relationship(back_populates="room")
-    tasks: Mapped[list["Task"]] = relationship()
+    users: Mapped[list["User"]] = relationship(back_populates="room", lazy="joined")
+    invitations: Mapped[list["Invitation"]] = relationship(back_populates="room", lazy="joined")
+    tasks: Mapped[list["Task"]] = relationship(lazy="joined")
 
     def __init__(self, id_: int = None, name: str = None):
         super().__init__(id=id_, name=name)

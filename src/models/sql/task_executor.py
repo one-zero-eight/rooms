@@ -22,8 +22,8 @@ class TaskExecutor(Base):
     )
     order_number: Mapped[int]
 
-    user: Mapped["User"] = relationship(back_populates="executors")
-    order: Mapped["Order"] = relationship(back_populates="executors")
+    user: Mapped["User"] = relationship(back_populates="executors", lazy="joined")
+    order: Mapped["Order"] = relationship(back_populates="executors", lazy="joined")
 
     def __init__(
         self,

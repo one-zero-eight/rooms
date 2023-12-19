@@ -14,9 +14,11 @@ if typing.TYPE_CHECKING:
 class Order(Base, IdMixin):
     __tablename__ = "orders"
 
-    users: Mapped[list["User"]] = relationship(back_populates="orders", secondary="executors", viewonly=True)
-    executors: Mapped[list["TaskExecutor"]] = relationship(back_populates="order")
-    tasks: Mapped[set["Task"]] = relationship(back_populates="order")
+    users: Mapped[list["User"]] = relationship(
+        back_populates="orders", secondary="executors", viewonly=True, lazy="joined"
+    )
+    executors: Mapped[list["TaskExecutor"]] = relationship(back_populates="order", lazy="joined")
+    tasks: Mapped[set["Task"]] = relationship(back_populates="order", lazy="joined")
 
     def __init__(self, id_: int = None):
         super().__init__(id=id_)

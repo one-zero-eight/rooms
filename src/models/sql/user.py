@@ -22,10 +22,12 @@ class User(Base):
     room_id: Mapped[Optional[int]] = mapped_column(ForeignKey("rooms.id", onupdate="CASCADE", ondelete="SET NULL"))
     register_datetime: Mapped[Optional[datetime]] = mapped_column(server_default=func.now())
 
-    room: Mapped["Room"] = relationship(back_populates="users")
-    # invitations: Mapped[list["Invitation"]] = relationship()
-    orders: Mapped[list["Order"]] = relationship(back_populates="users", secondary="executors", viewonly=True)
-    executors: Mapped[list["TaskExecutor"]] = relationship(back_populates="user")
+    room: Mapped["Room"] = relationship(back_populates="users", lazy="joined")
+    # invitations: Mapped[list["Invitation"]] = relationship(lazy="joined")
+    orders: Mapped[list["Order"]] = relationship(
+        back_populates="users", secondary="executors", viewonly=True, lazy="joined"
+    )
+    executors: Mapped[list["TaskExecutor"]] = relationship(back_populates="user", lazy="joined")
 
     def __init__(
         self,

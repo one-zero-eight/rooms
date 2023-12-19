@@ -18,8 +18,8 @@ class Invitation(Base, IdMixin):
     adressee_id: Mapped[int]
     room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id", onupdate="CASCADE", ondelete="CASCADE"))
 
-    sender: Mapped["User"] = relationship()
-    room: Mapped["Room"] = relationship(back_populates="invitations")
+    sender: Mapped["User"] = relationship(lazy="joined")
+    room: Mapped["Room"] = relationship(back_populates="invitations", lazy="joined")
 
     def __init__(
         self,
