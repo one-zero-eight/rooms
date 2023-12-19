@@ -20,7 +20,7 @@ class Room(Base, IdMixin):
     invitations: Mapped[list["Invitation"]] = relationship(back_populates="room")
     tasks: Mapped[list["Task"]] = relationship()
 
-    def __init__(self, id_: int = None, name: int = None):
+    def __init__(self, id_: int = None, name: str = None):
         super().__init__(id=id_, name=name)
 
     def __repr__(self):
