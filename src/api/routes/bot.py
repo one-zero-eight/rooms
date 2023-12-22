@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from starlette import status
 
 from src.api.auth.utils import BOT_ACCESS_DEPENDENCY
-from src.api.utils import check_room_exists, check_user_exists, check_user_not_exists
+from src.api.utils import check_room_exists, check_user_not_exists, USER_DEPENDENCY
 from src.db_sessions import DB_SESSION_DEPENDENCY
 from src.models.sql import User, Room
 from src.schemas.db_schemas import UserSchema, RoomSchema
@@ -29,12 +29,11 @@ async def create_user(user: CreateUserBody, db: DB_SESSION_DEPENDENCY):
 
 
 @bot_router.post("/room/create", response_model=RoomSchema)
-async def create_room(body: CreateRoomBody, db: DB_SESSION_DEPENDENCY):
-    user = await check_user_exists(body.user_id, db)
+async def create_room(user: USER_DEPENDENCY, room: CreateRoomBody, db: DB_SESSION_DEPENDENCY):
     if user.room is not None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "The user already has a room")
 
-    room = Room(name=body.name)
+    room = Room(name=room.name)
     user.room = room
     db.add(room)
     await db.commit()

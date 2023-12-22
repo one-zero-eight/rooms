@@ -8,4 +8,3 @@ class CreateUserBody(BaseModel):
 
 class CreateRoomBody(BaseModel):
     name: str
-    user_id: int
