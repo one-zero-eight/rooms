@@ -37,3 +37,13 @@ async def check_room_exists(room_id: int, db: AsyncSession) -> Room:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "The room does not exist")
     # noinspection PyTypeChecker
     return room
+
+
+async def room_dependency(user: USER_DEPENDENCY) -> Room:
+    if user.room is None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "The user does not have a room")
+    # noinspection PyTypeChecker
+    return user.room
+
+
+ROOM_DEPENDENCY = Annotated[Room, Depends(room_dependency)]

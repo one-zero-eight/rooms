@@ -8,3 +8,7 @@ class CreateUserBody(BaseModel):
 
 class CreateRoomBody(BaseModel):
     name: str
+
+
+class InvitePersonBody(BaseModel):
+    addressee_id: int
