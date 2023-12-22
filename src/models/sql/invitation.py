@@ -14,7 +14,7 @@ if typing.TYPE_CHECKING:
 class Invitation(Base, IdMixin):
     __tablename__ = "invitations"
 
-    sender_id: Mapped[int] = mapped_column(ForeignKey("users.telegram_id", onupdate="CASCADE", ondelete="CASCADE"))
+    sender_id: Mapped[int] = mapped_column(ForeignKey("users.id", onupdate="CASCADE", ondelete="CASCADE"))
     adressee_id: Mapped[int]
     room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id", onupdate="CASCADE", ondelete="CASCADE"))
 

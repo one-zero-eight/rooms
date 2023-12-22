@@ -15,7 +15,7 @@ class TaskExecutor(Base):
     __table_args__ = (UniqueConstraint("order_id", "order_number"),)
 
     user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.telegram_id", onupdate="cascade", ondelete="cascade"), primary_key=True, autoincrement=False
+        ForeignKey("users.id", onupdate="cascade", ondelete="cascade"), primary_key=True, autoincrement=False
     )
     order_id: Mapped[int] = mapped_column(
         ForeignKey("orders.id", onupdate="cascade", ondelete="cascade"), primary_key=True, autoincrement=False

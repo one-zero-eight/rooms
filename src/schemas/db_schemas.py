@@ -8,7 +8,7 @@ class DbScheme(BaseModel):
 
 
 class UserSchema(DbScheme):
-    telegram_id: int
+    id: int
     room_id: int | None = None
     register_datetime: datetime | None = None
 

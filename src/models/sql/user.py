@@ -18,7 +18,7 @@ if typing.TYPE_CHECKING:
 class User(Base):
     __tablename__ = "users"
 
-    telegram_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
     room_id: Mapped[Optional[int]] = mapped_column(ForeignKey("rooms.id", onupdate="CASCADE", ondelete="SET NULL"))
     register_datetime: Mapped[Optional[datetime]] = mapped_column(server_default=func.now())
 
@@ -31,15 +31,12 @@ class User(Base):
 
     def __init__(
         self,
-        telegram_id: int = None,
+        id_: int = None,
         room_id: int = None,
         register_datetime: datetime = None,
         room: "Room" = None,
     ):
-        super().__init__(telegram_id=telegram_id, room_id=room_id, register_datetime=register_datetime, room=room)
+        super().__init__(id=id_, room_id=room_id, register_datetime=register_datetime, room=room)
 
     def __repr__(self):
-        return (
-            f"User(telegram_id={self.telegram_id}, room_id={self.room_id}, "
-            f"register_datetime={repr(self.register_datetime)})"
-        )
+        return f"User(id={self.id}, room_id={self.room_id}, " f"register_datetime={repr(self.register_datetime)})"

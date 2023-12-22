@@ -13,11 +13,11 @@ bot_router = APIRouter(prefix="/bot", dependencies=[BOT_ACCESS_DEPENDENCY])
 
 @bot_router.post("/user/create", response_model=UserSchema)
 async def create_user(user: CreateUserBody, db: DB_SESSION_DEPENDENCY):
-    await check_user_not_exists(user.telegram_id, db)
+    await check_user_not_exists(user.user_id, db)
     if user.room_id is not None:
         await check_room_exists(user.room_id, db)
 
-    new_user = User(user.telegram_id)
+    new_user = User(user.user_id)
     db.add(new_user)
     await db.commit()
 
