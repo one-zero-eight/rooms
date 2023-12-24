@@ -3,16 +3,16 @@ from datetime import datetime
 from pydantic import BaseModel, ConfigDict
 
 
-class DbScheme(BaseModel):
+class DbSchema(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
-class UserSchema(DbScheme):
+class UserSchema(DbSchema):
     id: int
     room_id: int | None = None
     register_datetime: datetime | None = None
 
 
-class RoomSchema(DbScheme):
+class RoomSchema(DbSchema):
     id: int
     name: str
