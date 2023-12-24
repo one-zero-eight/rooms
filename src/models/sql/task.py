@@ -33,7 +33,6 @@ class Task(Base, IdMixin):
         start_date: datetime = None,
         period: int = None,
         order_id: int = None,
-        order: "Order" = None,
     ):
         super().__init__(
             id=id_,
@@ -43,7 +42,6 @@ class Task(Base, IdMixin):
             start_date=start_date,
             period=period,
             order_id=order_id,
-            order=order,
         )
 
     def __repr__(self):

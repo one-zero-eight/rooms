@@ -30,10 +30,8 @@ class TaskExecutor(Base):
         user_id: int = None,
         order_id: int = None,
         order_number: int = None,
-        user: "User" = None,
-        order: "Order" = None,
     ):
-        super().__init__(user_id=user_id, order_id=order_id, order_number=order_number, user=user, order=order)
+        super().__init__(user_id=user_id, order_id=order_id, order_number=order_number)
 
     def __repr__(self):
         return f"TaskExecutor(user_id={self.user_id}, order_id={self.order_id}, order_number={self.order_number})"

@@ -27,12 +27,8 @@ class Invitation(Base, IdMixin):
         sender_id: int = None,
         adressee_id: int = None,
         room_id: int = None,
-        sender: "User" = None,
-        room: "Room" = None,
     ):
-        super().__init__(
-            id=id_, sender_id=sender_id, adressee_id=adressee_id, room_id=room_id, sender=sender, room=room
-        )
+        super().__init__(id=id_, sender_id=sender_id, adressee_id=adressee_id, room_id=room_id)
 
     def __repr__(self):
         return (

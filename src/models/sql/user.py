@@ -34,9 +34,8 @@ class User(Base):
         id_: int = None,
         room_id: int = None,
         register_datetime: datetime = None,
-        room: "Room" = None,
     ):
-        super().__init__(id=id_, room_id=room_id, register_datetime=register_datetime, room=room)
+        super().__init__(id=id_, room_id=room_id, register_datetime=register_datetime)
 
     def __repr__(self):
         return f"User(id={self.id}, room_id={self.room_id}, " f"register_datetime={repr(self.register_datetime)})"
