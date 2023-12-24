@@ -20,7 +20,7 @@ class TaskExecutor(Base):
     order_id: Mapped[int] = mapped_column(
         ForeignKey("orders.id", onupdate="cascade", ondelete="cascade"), primary_key=True, autoincrement=False
     )
-    order_number: Mapped[int]
+    order_number: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
 
     user: Mapped["User"] = relationship(back_populates="executors", lazy="joined")
     order: Mapped["Order"] = relationship(back_populates="executors", lazy="joined")
