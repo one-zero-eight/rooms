@@ -14,5 +14,9 @@ class InvitePersonBody(BaseModel):
     addressee_id: int
 
 
+class CreateOrderBody(BaseModel):
+    users: list[int]
+
+
 class AcceptInvitationBody(BaseModel):
     id: int

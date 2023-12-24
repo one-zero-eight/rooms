@@ -4,12 +4,18 @@ from sqlalchemy.sql.functions import count
 from starlette import status
 
 from src.api.auth.utils import BOT_ACCESS_DEPENDENCY
-from src.api.utils import check_room_exists, check_user_not_exists, USER_DEPENDENCY, ROOM_DEPENDENCY
+from src.api.utils import check_room_exists, check_user_not_exists, USER_DEPENDENCY, ROOM_DEPENDENCY, check_user_exists
 from src.config import SETTINGS_DEPENDENCY
 from src.db_sessions import DB_SESSION_DEPENDENCY
-from src.models.sql import User, Room, Invitation
-from src.schemas.db_schemas import UserSchema, RoomSchema
-from src.schemas.method_input_schemas import CreateUserBody, CreateRoomBody, InvitePersonBody, AcceptInvitationBody
+from src.models.sql import User, Room, Invitation, TaskExecutor, Order
+from src.schemas.db_schemas import UserSchema, RoomSchema, OrderSchema
+from src.schemas.method_input_schemas import (
+    CreateUserBody,
+    CreateRoomBody,
+    InvitePersonBody,
+    AcceptInvitationBody,
+    CreateOrderBody,
+)
 
 bot_router = APIRouter(prefix="/bot", dependencies=[BOT_ACCESS_DEPENDENCY])
 
@@ -91,3 +97,22 @@ async def accept_invitation(user: USER_DEPENDENCY, invitation: AcceptInvitationB
     await db.commit()
 
     return True
+
+
+@bot_router.post("/order/create", response_model=OrderSchema)
+async def create_order(room: ROOM_DEPENDENCY, order: CreateOrderBody, db: DB_SESSION_DEPENDENCY):
+    order_list = []
+    for i, user_id in enumerate(order.users):
+        order_list.append(user := await check_user_exists(user_id, db))
+        if user.room_id != room.id:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "One of the users does not belong to the room")
+
+    order = Order()
+    for i, user in enumerate(order_list):
+        executor = TaskExecutor(user_id=user.id, order_number=i)
+        executor.order = order
+
+    db.add(order)
+    await db.commit()
+
+    return order

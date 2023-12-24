@@ -16,3 +16,7 @@ class UserSchema(DbSchema):
 class RoomSchema(DbSchema):
     id: int
     name: str
+
+
+class OrderSchema(DbSchema):
+    id: int
