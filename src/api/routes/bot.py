@@ -9,7 +9,7 @@ from src.config import SETTINGS_DEPENDENCY
 from src.db_sessions import DB_SESSION_DEPENDENCY
 from src.models.sql import User, Room, Invitation
 from src.schemas.db_schemas import UserSchema, RoomSchema
-from src.schemas.method_input_schemas import CreateUserBody, CreateRoomBody, InvitePersonBody
+from src.schemas.method_input_schemas import CreateUserBody, CreateRoomBody, InvitePersonBody, AcceptInvitationBody
 
 bot_router = APIRouter(prefix="/bot", dependencies=[BOT_ACCESS_DEPENDENCY])
 
@@ -70,6 +70,24 @@ async def invite_person(
 
     invite = Invitation(sender_id=user.id, adressee_id=addressee_id, room_id=room.id)
     db.add(invite)
+    await db.commit()
+
+    return True
+
+
+@bot_router.post("/user/accept_invitation")
+async def accept_invitation(user: USER_DEPENDENCY, invitation: AcceptInvitationBody, db: DB_SESSION_DEPENDENCY):
+    if user.room_id is not None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "The user already has a room")
+
+    invitation = await db.get(Invitation, invitation.id)
+    if invitation is None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "The invitation is not found")
+    if invitation.adressee_id != user.id:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "The invitation is not addressed to this user")
+
+    user.room_id = invitation.room_id
+    await db.delete(invitation)
     await db.commit()
 
     return True
