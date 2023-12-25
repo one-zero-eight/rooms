@@ -116,7 +116,7 @@ async def create_order(room: ROOM_DEPENDENCY, order: CreateOrderBody, db: DB_SES
 async def create_task(room: ROOM_DEPENDENCY, task: CreateTaskBody, db: DB_SESSION_DEPENDENCY) -> int:
     order = await check_order_exists(task.order_id, db)
 
-    task = Task(name=task.name, descriprion=task.description, start_date=task.start_date, period=task.period)
+    task = Task(name=task.name, description=task.description, start_date=task.start_date, period=task.period)
     task.room_id = room.id
     task.order_id = order.id
     db.add(task)
