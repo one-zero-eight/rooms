@@ -99,7 +99,7 @@ async def create_order(room: ROOM_DEPENDENCY, order: CreateOrderBody, db: DB_SES
     for i, user_id in enumerate(order.users):
         order_list.append(user := await check_user_exists(user_id, db))
         if user.room_id != room.id:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, "One of the users does not belong to the room")
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, f"The user {user_id} does not belong to the room")
 
     order = Order()
     for i, user in enumerate(order_list):
