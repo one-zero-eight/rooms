@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 
 from pydantic import BaseModel, Field
 
@@ -26,7 +25,7 @@ class AcceptInvitationBody(BaseModel):
 
 class CreateTaskBody(BaseModel):
     name: str
-    description: Optional[str]
+    description: str | None = ""
     start_date: datetime
-    period: int = Field(gt=0)  # in days
-    order_id: Optional[int]
+    period: int = Field(gt=0, description="period in days")
+    order_id: int | None = None
