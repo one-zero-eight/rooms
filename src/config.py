@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     TOKEN_ALGORITHM: str
     MAX_INVITATIONS: int
+    MAX_ORDERS: int
+    MAX_TASKS: int
 
     model_config = SettingsConfigDict(env_file=".env")
 

@@ -69,6 +69,7 @@ async def invite_person(
     ).scalar()
     if number_of_invitations >= settings.MAX_INVITATIONS:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Maximum number of invitations is reached for the user")
+
     if (
         await db.execute(
             select(exists(Invitation)).where(Invitation.sender_id == user.id, Invitation.adressee_id == addressee_id)
@@ -102,7 +103,13 @@ async def accept_invitation(user: USER_DEPENDENCY, invitation: AcceptInvitationB
 
 
 @bot_router.post("/order/create", response_description="The id of created order")
-async def create_order(room: ROOM_DEPENDENCY, order: CreateOrderBody, db: DB_SESSION_DEPENDENCY) -> int:
+async def create_order(
+    room: ROOM_DEPENDENCY, order: CreateOrderBody, db: DB_SESSION_DEPENDENCY, settings: SETTINGS_DEPENDENCY
+) -> int:
+    number_of_orders = len(room.orders)
+    if number_of_orders >= settings.MAX_ORDERS:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Maximum number of orders is reached for the room")
+
     order_list = []
     for i, user_id in enumerate(order.users):
         order_list.append(user := await check_user_exists(user_id, db))
@@ -121,7 +128,12 @@ async def create_order(room: ROOM_DEPENDENCY, order: CreateOrderBody, db: DB_SES
 
 
 @bot_router.post("/task/create", response_description="The id of the created task")
-async def create_task(room: ROOM_DEPENDENCY, task: CreateTaskBody, db: DB_SESSION_DEPENDENCY) -> int:
+async def create_task(
+    room: ROOM_DEPENDENCY, task: CreateTaskBody, db: DB_SESSION_DEPENDENCY, settings: SETTINGS_DEPENDENCY
+) -> int:
+    number_of_tasks = len(room.tasks)
+    if number_of_tasks >= settings.MAX_TASKS:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Maximum number of tasks is reached for the room")
     order = await check_order_exists(task.order_id, db)
 
     task = Task(name=task.name, description=task.description, start_date=task.start_date, period=task.period)
