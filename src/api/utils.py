@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
 from src.db_sessions import DB_SESSION_DEPENDENCY
-from src.models.sql import User, Room, Order
+from src.models.sql import User, Room, Order, Task
 
 
 async def check_user_not_exists(user_id: int, db: AsyncSession):
@@ -54,3 +54,10 @@ async def check_order_exists(order_id: int, db: AsyncSession) -> Order:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "The order does not exist")
     # noinspection PyTypeChecker
     return order
+
+
+async def check_task_exists(task_id: int, room_id: int, db: AsyncSession) -> Task:
+    if (task := await db.get(Task, task_id)) is None or task.room_id != room_id:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "The task does not exist")
+    # noinspection PyTypeChecker
+    return task

@@ -24,8 +24,17 @@ class AcceptInvitationBody(BaseModel):
 
 
 class CreateTaskBody(BaseModel):
-    name: str
-    description: str | None = ""
+    name: str = Field(max_length=100)
+    description: str | None = Field("", max_length=1000)
     start_date: datetime
     period: int = Field(gt=0, description="period in days")
+    order_id: int | None = None
+
+
+class ModifyTaskBody(BaseModel):
+    id: int
+    name: str | None = Field(None, max_length=100)
+    description: str | None = Field(None, max_length=1000)
+    start_date: datetime | None = None
+    period: int | None = Field(None, gt=0, description="period in days")
     order_id: int | None = None

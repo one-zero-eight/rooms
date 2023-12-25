@@ -4,7 +4,14 @@ from sqlalchemy.sql.functions import count
 from starlette import status
 
 from src.api.auth.utils import BOT_ACCESS_DEPENDENCY
-from src.api.utils import check_user_not_exists, USER_DEPENDENCY, ROOM_DEPENDENCY, check_user_exists, check_order_exists
+from src.api.utils import (
+    check_user_not_exists,
+    USER_DEPENDENCY,
+    ROOM_DEPENDENCY,
+    check_user_exists,
+    check_order_exists,
+    check_task_exists,
+)
 from src.config import SETTINGS_DEPENDENCY
 from src.db_sessions import DB_SESSION_DEPENDENCY
 from src.models.sql import User, Room, Invitation, TaskExecutor, Order, Task
@@ -15,6 +22,7 @@ from src.schemas.method_input_schemas import (
     AcceptInvitationBody,
     CreateOrderBody,
     CreateTaskBody,
+    ModifyTaskBody,
 )
 
 bot_router = APIRouter(prefix="/bot", dependencies=[BOT_ACCESS_DEPENDENCY])
@@ -124,3 +132,16 @@ async def create_task(room: ROOM_DEPENDENCY, task: CreateTaskBody, db: DB_SESSIO
     await db.commit()
 
     return task.id
+
+
+@bot_router.post("/task/modify", response_description="True if the operation was successful")
+async def modify_task(room: ROOM_DEPENDENCY, task: ModifyTaskBody, db: DB_SESSION_DEPENDENCY) -> bool:
+    task_obj = await check_task_exists(task.id, room.id, db)
+
+    for param in ("name", "description", "start_date", "period", "order_id"):
+        if (value := getattr(task, param)) is not None:
+            print(param, value)
+            setattr(task_obj, param, value)
+    await db.commit()
+
+    return True
