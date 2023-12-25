@@ -8,7 +8,6 @@ from src.api.utils import check_user_not_exists, USER_DEPENDENCY, ROOM_DEPENDENC
 from src.config import SETTINGS_DEPENDENCY
 from src.db_sessions import DB_SESSION_DEPENDENCY
 from src.models.sql import User, Room, Invitation, TaskExecutor, Order, Task
-from src.schemas.db_schemas import UserSchema, RoomSchema, OrderSchema
 from src.schemas.method_input_schemas import (
     CreateUserBody,
     CreateRoomBody,
@@ -21,19 +20,19 @@ from src.schemas.method_input_schemas import (
 bot_router = APIRouter(prefix="/bot", dependencies=[BOT_ACCESS_DEPENDENCY])
 
 
-@bot_router.post("/user/create", response_model=UserSchema)
-async def create_user(user: CreateUserBody, db: DB_SESSION_DEPENDENCY):
+@bot_router.post("/user/create", response_description="The user's id")
+async def create_user(user: CreateUserBody, db: DB_SESSION_DEPENDENCY) -> int:
     await check_user_not_exists(user.user_id, db)
 
     new_user = User(user.user_id)
     db.add(new_user)
     await db.commit()
 
-    return new_user
+    return new_user.id
 
 
-@bot_router.post("/room/create", response_model=RoomSchema)
-async def create_room(user: USER_DEPENDENCY, room: CreateRoomBody, db: DB_SESSION_DEPENDENCY):
+@bot_router.post("/room/create", response_description="The id of created room")
+async def create_room(user: USER_DEPENDENCY, room: CreateRoomBody, db: DB_SESSION_DEPENDENCY) -> int:
     if user.room is not None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "The user already has a room")
 
@@ -42,17 +41,17 @@ async def create_room(user: USER_DEPENDENCY, room: CreateRoomBody, db: DB_SESSIO
     db.add(room)
     await db.commit()
 
-    return room
+    return room.id
 
 
-@bot_router.post("/user/invite")
+@bot_router.post("/user/invite", response_description="The id of created invitation")
 async def invite_person(
     user: USER_DEPENDENCY,
     room: ROOM_DEPENDENCY,
     addressee: InvitePersonBody,
     db: DB_SESSION_DEPENDENCY,
     settings: SETTINGS_DEPENDENCY,
-):
+) -> int:
     addressee_id = addressee.addressee_id
     if (addressee := await db.get(User, addressee_id)) is not None and addressee.room_id is not None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "The user already has a room")
@@ -73,11 +72,11 @@ async def invite_person(
     db.add(invite)
     await db.commit()
 
-    return True
+    return invite.id
 
 
-@bot_router.post("/user/accept_invitation")
-async def accept_invitation(user: USER_DEPENDENCY, invitation: AcceptInvitationBody, db: DB_SESSION_DEPENDENCY):
+@bot_router.post("/user/accept_invitation", response_description="The id of the room the invitation led to")
+async def accept_invitation(user: USER_DEPENDENCY, invitation: AcceptInvitationBody, db: DB_SESSION_DEPENDENCY) -> int:
     if user.room_id is not None:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "The user already has a room")
 
@@ -91,11 +90,11 @@ async def accept_invitation(user: USER_DEPENDENCY, invitation: AcceptInvitationB
     await db.delete(invitation)
     await db.commit()
 
-    return True
+    return invitation.room_id
 
 
-@bot_router.post("/order/create", response_model=OrderSchema)
-async def create_order(room: ROOM_DEPENDENCY, order: CreateOrderBody, db: DB_SESSION_DEPENDENCY):
+@bot_router.post("/order/create", response_description="The id of created order")
+async def create_order(room: ROOM_DEPENDENCY, order: CreateOrderBody, db: DB_SESSION_DEPENDENCY) -> int:
     order_list = []
     for i, user_id in enumerate(order.users):
         order_list.append(user := await check_user_exists(user_id, db))
@@ -110,11 +109,11 @@ async def create_order(room: ROOM_DEPENDENCY, order: CreateOrderBody, db: DB_SES
     db.add(order)
     await db.commit()
 
-    return order
+    return order.id
 
 
-@bot_router.post("/task/create")
-async def create_task(room: ROOM_DEPENDENCY, task: CreateTaskBody, db: DB_SESSION_DEPENDENCY):
+@bot_router.post("/task/create", response_description="The id of the created task")
+async def create_task(room: ROOM_DEPENDENCY, task: CreateTaskBody, db: DB_SESSION_DEPENDENCY) -> int:
     order = await check_order_exists(task.order_id, db)
 
     task = Task(name=task.name, descriprion=task.description, start_date=task.start_date, period=task.period)
@@ -124,4 +123,4 @@ async def create_task(room: ROOM_DEPENDENCY, task: CreateTaskBody, db: DB_SESSIO
 
     await db.commit()
 
-    return True
+    return task.id
