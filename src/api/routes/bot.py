@@ -109,7 +109,7 @@ async def create_order(room: ROOM_DEPENDENCY, order: CreateOrderBody, db: DB_SES
         if user.room_id != room.id:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, f"The user {user_id} does not belong to the room")
 
-    order = Order()
+    order = Order(room_id=room.id)
     for i, user in enumerate(order_list):
         executor = TaskExecutor(user_id=user.id, order_number=i)
         executor.order = order
