@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from starlette import status
 
 from src.db_sessions import DB_SESSION_DEPENDENCY
-from src.models.sql import User, Room
+from src.models.sql import User, Room, Order
 
 
 async def check_user_not_exists(user_id: int, db: AsyncSession):
@@ -47,3 +47,10 @@ async def room_dependency(user: USER_DEPENDENCY) -> Room:
 
 
 ROOM_DEPENDENCY = Annotated[Room, Depends(room_dependency)]
+
+
+async def check_order_exists(order_id: int, db: AsyncSession) -> Order:
+    if (order := await db.get(Order, order_id)) is None:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "The order does not exist")
+    # noinspection PyTypeChecker
+    return order

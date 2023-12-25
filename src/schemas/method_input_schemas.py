@@ -1,3 +1,6 @@
+from datetime import datetime
+from typing import Optional
+
 from pydantic import BaseModel, Field
 
 
@@ -19,3 +22,11 @@ class CreateOrderBody(BaseModel):
 
 class AcceptInvitationBody(BaseModel):
     id: int
+
+
+class CreateTaskBody(BaseModel):
+    name: str
+    description: Optional[str]
+    start_date: datetime
+    period: int = Field(gt=0)  # in days
+    order_id: Optional[int]

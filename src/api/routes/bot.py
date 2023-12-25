@@ -4,10 +4,10 @@ from sqlalchemy.sql.functions import count
 from starlette import status
 
 from src.api.auth.utils import BOT_ACCESS_DEPENDENCY
-from src.api.utils import check_user_not_exists, USER_DEPENDENCY, ROOM_DEPENDENCY, check_user_exists
+from src.api.utils import check_user_not_exists, USER_DEPENDENCY, ROOM_DEPENDENCY, check_user_exists, check_order_exists
 from src.config import SETTINGS_DEPENDENCY
 from src.db_sessions import DB_SESSION_DEPENDENCY
-from src.models.sql import User, Room, Invitation, TaskExecutor, Order
+from src.models.sql import User, Room, Invitation, TaskExecutor, Order, Task
 from src.schemas.db_schemas import UserSchema, RoomSchema, OrderSchema
 from src.schemas.method_input_schemas import (
     CreateUserBody,
@@ -15,6 +15,7 @@ from src.schemas.method_input_schemas import (
     InvitePersonBody,
     AcceptInvitationBody,
     CreateOrderBody,
+    CreateTaskBody,
 )
 
 bot_router = APIRouter(prefix="/bot", dependencies=[BOT_ACCESS_DEPENDENCY])
@@ -110,3 +111,17 @@ async def create_order(room: ROOM_DEPENDENCY, order: CreateOrderBody, db: DB_SES
     await db.commit()
 
     return order
+
+
+@bot_router.post("/task/create")
+async def create_task(room: ROOM_DEPENDENCY, task: CreateTaskBody, db: DB_SESSION_DEPENDENCY):
+    order = await check_order_exists(task.order_id, db)
+
+    task = Task(name=task.name, descriprion=task.description, start_date=task.start_date, period=task.period)
+    task.room_id = room.id
+    task.order_id = order.id
+    db.add(task)
+
+    await db.commit()
+
+    return True
