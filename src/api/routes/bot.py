@@ -134,7 +134,7 @@ async def create_task(
     number_of_tasks = len(room.tasks)
     if number_of_tasks >= settings.MAX_TASKS:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Maximum number of tasks is reached for the room")
-    order = await check_order_exists(task.order_id, db)
+    order = await check_order_exists(task.order_id, room.id, db)
 
     task = Task(name=task.name, description=task.description, start_date=task.start_date, period=task.period)
     task.room_id = room.id

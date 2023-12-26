@@ -49,8 +49,8 @@ async def room_dependency(user: USER_DEPENDENCY) -> Room:
 ROOM_DEPENDENCY = Annotated[Room, Depends(room_dependency)]
 
 
-async def check_order_exists(order_id: int, db: AsyncSession) -> Order:
-    if (order := await db.get(Order, order_id)) is None:
+async def check_order_exists(order_id: int, room_id: int, db: AsyncSession) -> Order:
+    if (order := await db.get(Order, order_id)) is None or order.room_id != room_id:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "The order does not exist")
     # noinspection PyTypeChecker
     return order
