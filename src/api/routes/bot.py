@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, HTTPException
 from sqlalchemy import select, exists
 from sqlalchemy.sql.functions import count
@@ -24,6 +26,7 @@ from src.schemas.method_input_schemas import (
     CreateTaskBody,
     ModifyTaskBody,
 )
+from src.schemas.method_output_schemas import DailyInfoResponse, TaskCurrentInfo
 
 bot_router = APIRouter(prefix="/bot", dependencies=[BOT_ACCESS_DEPENDENCY])
 
@@ -157,3 +160,27 @@ async def modify_task(room: ROOM_DEPENDENCY, task: ModifyTaskBody, db: DB_SESSIO
     await db.commit()
 
     return True
+
+
+@bot_router.post("/room/daily_info", response_description="Statuses of the tasks of the room")
+async def get_daily_info(room: ROOM_DEPENDENCY) -> DailyInfoResponse:
+    response = DailyInfoResponse(tasks=[])
+    task: Task
+    for task in room.tasks:
+        if task.order_id is None or task.start_date > datetime.now():
+            response.tasks.append(TaskCurrentInfo(id=task.id, name=task.name, today_user_id=None))
+
+        executors = task.order.executors
+        i = (datetime.now() - task.start_date).days % len(executors)
+
+        todays_executor: TaskExecutor
+        executor: TaskExecutor
+        for executor in executors:
+            if executor.order_number == i:
+                todays_executor = executor
+                break
+
+        # noinspection PyUnboundLocalVariable
+        response.tasks.append(TaskCurrentInfo(id=task.id, name=task.name, today_user_id=todays_executor.user_id))
+
+    return response
