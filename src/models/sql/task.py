@@ -22,7 +22,7 @@ class Task(Base, IdMixin):
     period: Mapped[int]  # in days
     order_id: Mapped[Optional[int]] = mapped_column(ForeignKey("orders.id", onupdate="CASCADE", ondelete="SET NULL"))
 
-    order: Mapped["Order"] = relationship(back_populates="tasks", lazy="joined")
+    order: Mapped[Optional["Order"]] = relationship(back_populates="tasks", lazy="joined")
 
     def __init__(
         self,

@@ -22,7 +22,7 @@ class User(Base):
     room_id: Mapped[Optional[int]] = mapped_column(ForeignKey("rooms.id", onupdate="CASCADE", ondelete="SET NULL"))
     register_datetime: Mapped[Optional[datetime]] = mapped_column(server_default=func.now())
 
-    room: Mapped["Room"] = relationship(back_populates="users", lazy="joined")
+    room: Mapped[Optional["Room"]] = relationship(back_populates="users", lazy="joined")
     # invitations: Mapped[list["Invitation"]] = relationship(lazy="joined")
     orders: Mapped[list["Order"]] = relationship(
         back_populates="users", secondary="executors", viewonly=True, lazy="joined"
