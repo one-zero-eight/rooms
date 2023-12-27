@@ -20,7 +20,7 @@ async def check_user_exists(user_id: int, db: AsyncSession) -> User:
     return user
 
 
-async def user_dependency(user_id: Annotated[int, Body()], db: DB_SESSION_DEPENDENCY) -> User:
+async def user_dependency(user_id: Annotated[int, Body(embed=True)], db: DB_SESSION_DEPENDENCY) -> User:
     return await check_user_exists(user_id, db)
 
 
