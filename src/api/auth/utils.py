@@ -1,11 +1,18 @@
 from datetime import timedelta, datetime
 from typing import Annotated
 
-from fastapi import Header, Depends, HTTPException, status
+from fastapi import Header, Depends
+
+# noinspection PyPackageRequirements
 from jose import jwt, ExpiredSignatureError, JWTError
 
+from src.api.exceptions import (
+    NoTokenException,
+    TelegramBotAccessException,
+    TokenExpiredException,
+    InvalidTokenException,
+)
 from src.config import get_settings
-
 
 settings = get_settings()
 
@@ -30,16 +37,16 @@ def decode_jwt(token: str):
 
 def verify_bot_access(x_token: Annotated[str | None, Header()] = None):
     if x_token is None:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "No access token provided")
+        raise NoTokenException()
     try:
         data = decode_jwt(x_token)
         if not data["sub"] == "tgbot":
-            raise HTTPException(status.HTTP_403_FORBIDDEN, "Invalid token for bot's access")
+            raise TelegramBotAccessException()
         return True
     except ExpiredSignatureError:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Access token has expired")
+        raise TokenExpiredException()
     except JWTError:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid access token")
+        raise InvalidTokenException()
 
 
 BOT_ACCESS_DEPENDENCY = Depends(verify_bot_access)

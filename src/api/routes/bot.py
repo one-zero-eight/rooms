@@ -1,16 +1,25 @@
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter
 from sqlalchemy import select, exists
 from sqlalchemy.sql.functions import count
-from starlette import status
 
 from src.api.auth.utils import BOT_ACCESS_DEPENDENCY
+from src.api.exceptions import (
+    UserHasRoomException,
+    TooManyInvitationsException,
+    InvitationAlreadySentException,
+    NotYoursInvitationException,
+    InvitationNotExistException,
+    TooManyOrdersException,
+    SpecifiedUserNotInRoomException,
+    TooManyTasksException,
+    SpecifiedUserNotExistException,
+)
 from src.api.utils import (
     check_user_not_exists,
     USER_DEPENDENCY,
     ROOM_DEPENDENCY,
-    check_user_exists,
     check_order_exists,
     check_task_exists,
 )
@@ -45,7 +54,7 @@ async def create_user(user: CreateUserBody, db: DB_SESSION_DEPENDENCY) -> int:
 @bot_router.post("/room/create", response_description="The id of created room")
 async def create_room(user: USER_DEPENDENCY, room: CreateRoomBody, db: DB_SESSION_DEPENDENCY) -> int:
     if user.room is not None:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "The user already has a room")
+        raise UserHasRoomException()
 
     room = Room(name=room.name)
     user.room = room
@@ -65,20 +74,20 @@ async def invite_person(
 ) -> int:
     addressee_id = addressee.addressee_id
     if (addressee := await db.get(User, addressee_id)) is not None and addressee.room_id is not None:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "The user already has a room")
+        raise UserHasRoomException()
 
     number_of_invitations = (
         await db.execute(select(count()).select_from(Invitation).where(Invitation.sender_id == user.id))
     ).scalar()
     if number_of_invitations >= settings.MAX_INVITATIONS:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Maximum number of invitations is reached for the user")
+        raise TooManyInvitationsException()
 
     if (
         await db.execute(
             select(exists(Invitation)).where(Invitation.sender_id == user.id, Invitation.adressee_id == addressee_id)
         )
     ).scalar():
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Such an invitation is already sent")
+        raise InvitationAlreadySentException()
 
     invite = Invitation(sender_id=user.id, adressee_id=addressee_id, room_id=room.id)
     db.add(invite)
@@ -90,13 +99,13 @@ async def invite_person(
 @bot_router.post("/user/accept_invitation", response_description="The id of the room the invitation led to")
 async def accept_invitation(user: USER_DEPENDENCY, invitation: AcceptInvitationBody, db: DB_SESSION_DEPENDENCY) -> int:
     if user.room_id is not None:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "The user already has a room")
+        raise UserHasRoomException()
 
     invitation = await db.get(Invitation, invitation.id)
     if invitation is None:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "The invitation is not found")
+        raise InvitationNotExistException()
     if invitation.adressee_id != user.id:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "The invitation is not addressed to this user")
+        raise NotYoursInvitationException()
 
     user.room_id = invitation.room_id
     await db.delete(invitation)
@@ -111,13 +120,16 @@ async def create_order(
 ) -> int:
     number_of_orders = len(room.orders)
     if number_of_orders >= settings.MAX_ORDERS:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Maximum number of orders is reached for the room")
+        raise TooManyOrdersException()
 
     order_list = []
     for i, user_id in enumerate(order.users):
-        order_list.append(user := await check_user_exists(user_id, db))
+        user = await db.get(User, user_id)
+        if user is None:
+            raise SpecifiedUserNotExistException(user_id)
+        order_list.append(user)
         if user.room_id != room.id:
-            raise HTTPException(status.HTTP_400_BAD_REQUEST, f"The user {user_id} does not belong to the room")
+            raise SpecifiedUserNotInRoomException(user_id)
 
     order = Order(room_id=room.id)
     for i, user in enumerate(order_list):
@@ -136,7 +148,7 @@ async def create_task(
 ) -> int:
     number_of_tasks = len(room.tasks)
     if number_of_tasks >= settings.MAX_TASKS:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Maximum number of tasks is reached for the room")
+        raise TooManyTasksException()
     order = await check_order_exists(task.order_id, room.id, db)
 
     task = Task(name=task.name, description=task.description, start_date=task.start_date, period=task.period)
