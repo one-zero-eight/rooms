@@ -167,7 +167,8 @@ async def modify_task(room: ROOM_DEPENDENCY, task: ModifyTaskBody, db: DB_SESSIO
 
     for param in ("name", "description", "start_date", "period", "order_id"):
         if (value := getattr(task, param)) is not None:
-            print(param, value)
+            if param == "order_id" and value is not None:
+                await check_order_exists(value, room.id, db)
             setattr(task_obj, param, value)
     await db.commit()
 
