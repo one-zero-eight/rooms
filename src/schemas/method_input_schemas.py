@@ -12,7 +12,7 @@ class CreateRoomBody(BaseModel):
 
 
 class InvitePersonBody(BaseModel):
-    addressee_id: int
+    id: int
 
 
 class CreateOrderBody(BaseModel):

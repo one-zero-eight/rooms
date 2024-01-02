@@ -72,7 +72,7 @@ async def invite_person(
     db: DB_SESSION_DEPENDENCY,
     settings: SETTINGS_DEPENDENCY,
 ) -> int:
-    addressee_id = addressee.addressee_id
+    addressee_id = addressee.id
     if (addressee := await db.get(User, addressee_id)) is not None and addressee.room_id is not None:
         raise UserHasRoomException()
 
