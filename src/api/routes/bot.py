@@ -84,12 +84,12 @@ async def invite_person(
 
     if (
         await db.execute(
-            select(exists(Invitation)).where(Invitation.sender_id == user.id, Invitation.adressee_id == addressee_id)
+            select(exists(Invitation)).where(Invitation.sender_id == user.id, Invitation.addressee_id == addressee_id)
         )
     ).scalar():
         raise InvitationAlreadySentException()
 
-    invite = Invitation(sender_id=user.id, adressee_id=addressee_id, room_id=room.id)
+    invite = Invitation(sender_id=user.id, addressee_id=addressee_id, room_id=room.id)
     db.add(invite)
     await db.commit()
 
@@ -104,7 +104,7 @@ async def accept_invitation(user: USER_DEPENDENCY, invitation: AcceptInvitationB
     invitation = await db.get(Invitation, invitation.id)
     if invitation is None:
         raise InvitationNotExistException()
-    if invitation.adressee_id != user.id:
+    if invitation.addressee_id != user.id:
         raise NotYoursInvitationException()
 
     user.room_id = invitation.room_id

@@ -15,7 +15,7 @@ class Invitation(Base, IdMixin):
     __tablename__ = "invitations"
 
     sender_id: Mapped[int] = mapped_column(ForeignKey("users.id", onupdate="CASCADE", ondelete="CASCADE"))
-    adressee_id: Mapped[int]
+    addressee_id: Mapped[int]
     room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id", onupdate="CASCADE", ondelete="CASCADE"))
 
     sender: Mapped["User"] = relationship(lazy="joined")
@@ -25,13 +25,13 @@ class Invitation(Base, IdMixin):
         self,
         id_: int = None,
         sender_id: int = None,
-        adressee_id: int = None,
+        addressee_id: int = None,
         room_id: int = None,
     ):
-        super().__init__(id=id_, sender_id=sender_id, adressee_id=adressee_id, room_id=room_id)
+        super().__init__(id=id_, sender_id=sender_id, addressee_id=addressee_id, room_id=room_id)
 
     def __repr__(self):
         return (
-            f"Invitation(id={self.id}, sender_id={self.sender_id}, adressee_id={self.adressee_id}, "
+            f"Invitation(id={self.id}, sender_id={self.sender_id}, addressee_id={self.addressee_id}, "
             f"room_id={self.room_id})"
         )
