@@ -20,6 +20,7 @@ pytest = "^7.4.3"
 httpx = "^0.25.2"
 psycopg = {extras = ["binary", "pool"], version = "^3.1.15"}
 sqlmodel = "^0.0.14"
+pytest-asyncio = "^0.23.3"
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.0.277"

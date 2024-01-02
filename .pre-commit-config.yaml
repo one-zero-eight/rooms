@@ -49,7 +49,7 @@ repos:
         stages:
           - pre-commit
           - pre-push
-        entry: env DOTENV_PATH="example.env" pytest -v
+        entry: env DOTENV_PATH="example.env" sh -c "alembic upgrade head && pytest -v"
         language: system
         pass_filenames: false
         always_run: true

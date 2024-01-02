@@ -27,14 +27,15 @@ def test_jwt_generation():
 def test_bot_access_granted():
     token = create_jwt({"sub": "tgbot"}, expires_delta=timedelta(seconds=30))
     response = client.get("/test_bot_access", headers={"X-Token": token})
-    assert response.status_code == 200
-    assert response.json() == "ok"
+    assert response.status_code == 200 and response.json() == "ok"
 
 
 def test_bot_access_denied():
     response = client.get("/test_bot_access")
-    assert response.status_code == 401
+    assert response.status_code == 401 and isinstance(response.json(), dict) and "code" in response.json()
+    assert response.json()["code"] == 1
 
     token = create_jwt({"sub": "me"}, expires_delta=timedelta(seconds=30))
     response = client.get("/test_bot_access", headers={"X-Token": token})
-    assert response.status_code == 403
+    assert response.status_code == 403 and isinstance(response.json(), dict) and "code" in response.json()
+    assert response.json()["code"] == 11

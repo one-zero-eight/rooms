@@ -16,10 +16,13 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(env_file=".env")
 
+    def __init__(self):
+        super().__init__(_env_file=os.getenv("DOTENV_PATH", ".env"))
+
 
 @lru_cache
 def get_settings():
-    return Settings(_env_file=os.getenv("DOTENV_PATH", ".env"))
+    return Settings()
 
 
 SETTINGS_DEPENDENCY = Annotated[Settings, Depends(get_settings)]
