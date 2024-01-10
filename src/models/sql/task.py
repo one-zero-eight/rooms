@@ -3,26 +3,24 @@ from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from src.models.sql.base import Base
-from src.models.sql.mixins import IdMixin
+from sqlmodel import SQLModel, Field, Relationship
 
 if typing.TYPE_CHECKING:
     from src.models.sql.order import Order
 
 
-class Task(Base, IdMixin):
+class Task(SQLModel, table=True):
     __tablename__ = "tasks"
 
-    name: Mapped[str]
-    description: Mapped[Optional[str]]
-    room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id", onupdate="CASCADE", ondelete="CASCADE"))
-    start_date: Mapped[datetime]
-    period: Mapped[int]  # in days
-    order_id: Mapped[Optional[int]] = mapped_column(ForeignKey("orders.id", onupdate="CASCADE", ondelete="SET NULL"))
+    id: int = Field(primary_key=True)
+    name: str
+    description: Optional[str]
+    room_id: int = Field(sa_column_args=(ForeignKey("rooms.id", onupdate="CASCADE", ondelete="CASCADE"),))
+    start_date: datetime
+    period: int  # in days
+    order_id: Optional[int] = Field(sa_column_args=(ForeignKey("orders.id", onupdate="CASCADE", ondelete="SET NULL"),))
 
-    order: Mapped[Optional["Order"]] = relationship(back_populates="tasks", lazy="joined")
+    order: Optional["Order"] = Relationship(back_populates="tasks", sa_relationship_kwargs={"lazy": "joined"})
 
     def __init__(
         self,

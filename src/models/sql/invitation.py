@@ -1,25 +1,23 @@
 import typing
 
 from sqlalchemy import ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from src.models.sql.mixins import IdMixin
-from src.models.sql.base import Base
+from sqlmodel import SQLModel, Field, Relationship
 
 if typing.TYPE_CHECKING:
     from src.models.sql.user import User
     from src.models.sql.room import Room
 
 
-class Invitation(Base, IdMixin):
+class Invitation(SQLModel, table=True):
     __tablename__ = "invitations"
 
-    sender_id: Mapped[int] = mapped_column(ForeignKey("users.id", onupdate="CASCADE", ondelete="CASCADE"))
-    addressee_id: Mapped[int]
-    room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id", onupdate="CASCADE", ondelete="CASCADE"))
+    id: int = Field(primary_key=True)
+    sender_id: int = Field(sa_column_args=(ForeignKey("users.id", onupdate="CASCADE", ondelete="CASCADE"),))
+    addressee_id: int
+    room_id: int = Field(sa_column_args=(ForeignKey("rooms.id", onupdate="CASCADE", ondelete="CASCADE"),))
 
-    sender: Mapped["User"] = relationship(lazy="joined")
-    room: Mapped["Room"] = relationship(back_populates="invitations", lazy="joined")
+    sender: "User" = Relationship(sa_relationship_kwargs={"lazy": "joined"})
+    room: "Room" = Relationship(back_populates="invitations", sa_relationship_kwargs={"lazy": "joined"})
 
     def __init__(
         self,

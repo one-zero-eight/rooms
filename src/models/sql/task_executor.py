@@ -1,29 +1,31 @@
 import typing
 
-from sqlalchemy import ForeignKey, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column, relationship
-
-from src.models.sql.base import Base
+from sqlalchemy import UniqueConstraint, ForeignKey
+from sqlmodel import SQLModel, Field, Relationship
 
 if typing.TYPE_CHECKING:
     from src.models.sql.user import User
     from src.models.sql.order import Order
 
 
-class TaskExecutor(Base):
+class TaskExecutor(SQLModel, table=True):
     __tablename__ = "executors"
     __table_args__ = (UniqueConstraint("order_id", "order_number"),)
 
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey("users.id", onupdate="cascade", ondelete="cascade"), primary_key=True, autoincrement=False
+    user_id: int = Field(
+        sa_column_args=(ForeignKey("users.id", onupdate="cascade", ondelete="cascade"),),
+        primary_key=True,
+        sa_column_kwargs={"autoincrement": False},
     )
-    order_id: Mapped[int] = mapped_column(
-        ForeignKey("orders.id", onupdate="cascade", ondelete="cascade"), primary_key=True, autoincrement=False
+    order_id: int = Field(
+        sa_column_args=(ForeignKey("orders.id", onupdate="cascade", ondelete="cascade"),),
+        primary_key=True,
+        sa_column_kwargs={"autoincrement": False},
     )
-    order_number: Mapped[int] = mapped_column(primary_key=True, autoincrement=False)
+    order_number: int = Field(primary_key=True, sa_column_kwargs={"autoincrement": False})
 
-    user: Mapped["User"] = relationship(back_populates="executors", lazy="joined")
-    order: Mapped["Order"] = relationship(back_populates="executors", lazy="joined")
+    user: "User" = Relationship(back_populates="executors", sa_relationship_kwargs={"lazy": "joined"})
+    order: "Order" = Relationship(back_populates="executors", sa_relationship_kwargs={"lazy": "joined"})
 
     def __init__(
         self,

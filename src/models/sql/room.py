@@ -1,9 +1,6 @@
 import typing
 
-from sqlalchemy.orm import Mapped, relationship
-
-from src.models.sql.base import Base
-from src.models.sql.mixins import IdMixin
+from sqlmodel import SQLModel, Relationship, Field
 
 if typing.TYPE_CHECKING:
     from src.models.sql.user import User
@@ -12,15 +9,16 @@ if typing.TYPE_CHECKING:
     from src.models.sql.order import Order
 
 
-class Room(Base, IdMixin):
+class Room(SQLModel, table=True):
     __tablename__ = "rooms"
 
-    name: Mapped[str]
+    id: int = Field(primary_key=True)
+    name: str
 
-    users: Mapped[list["User"]] = relationship(back_populates="room", lazy="joined")
-    invitations: Mapped[list["Invitation"]] = relationship(back_populates="room", lazy="joined")
-    tasks: Mapped[list["Task"]] = relationship(lazy="joined")
-    orders: Mapped[list["Order"]] = relationship(back_populates="room", lazy="joined")
+    users: list["User"] = Relationship(back_populates="room", sa_relationship_kwargs={"lazy": "joined"})
+    invitations: list["Invitation"] = Relationship(back_populates="room", sa_relationship_kwargs={"lazy": "joined"})
+    tasks: list["Task"] = Relationship(sa_relationship_kwargs={"lazy": "joined"})
+    orders: list["Order"] = Relationship(back_populates="room", sa_relationship_kwargs={"lazy": "joined"})
 
     def __init__(self, id_: int = None, name: str = None):
         super().__init__(id=id_, name=name)

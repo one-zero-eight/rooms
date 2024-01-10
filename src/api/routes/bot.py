@@ -82,6 +82,7 @@ async def invite_person(
     if number_of_invitations >= settings.MAX_INVITATIONS:
         raise TooManyInvitationsException()
 
+    # noinspection PyTypeChecker
     if (
         await db.execute(
             select(exists(Invitation)).where(Invitation.sender_id == user.id, Invitation.addressee_id == addressee_id)

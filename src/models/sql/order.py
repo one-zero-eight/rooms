@@ -1,10 +1,7 @@
 import typing
 
 from sqlalchemy import ForeignKey
-from sqlalchemy.orm import Mapped, relationship, mapped_column
-
-from src.models.sql import Base
-from src.models.sql.mixins import IdMixin
+from sqlmodel import SQLModel, Field, Relationship
 
 if typing.TYPE_CHECKING:
     from src.models.sql.user import User
@@ -13,17 +10,18 @@ if typing.TYPE_CHECKING:
     from src.models.sql.room import Room
 
 
-class Order(Base, IdMixin):
+class Order(SQLModel, table=True):
     __tablename__ = "orders"
 
-    room_id: Mapped[int] = mapped_column(ForeignKey("rooms.id", onupdate="CASCADE", ondelete="CASCADE"))
+    id: int = Field(primary_key=True)
+    room_id: int = Field(sa_column_args=(ForeignKey("rooms.id", onupdate="CASCADE", ondelete="CASCADE"),))
 
-    room: Mapped["Room"] = relationship(back_populates="orders", lazy="joined")
-    users: Mapped[list["User"]] = relationship(
-        back_populates="orders", secondary="executors", viewonly=True, lazy="joined"
+    room: "Room" = Relationship(back_populates="orders", sa_relationship_kwargs={"lazy": "joined"})
+    users: list["User"] = Relationship(
+        back_populates="orders", sa_relationship_kwargs={"lazy": "joined", "secondary": "executors", "viewonly": True}
     )
-    executors: Mapped[list["TaskExecutor"]] = relationship(back_populates="order", lazy="joined")
-    tasks: Mapped[set["Task"]] = relationship(back_populates="order", lazy="joined")
+    executors: list["TaskExecutor"] = Relationship(back_populates="order", sa_relationship_kwargs={"lazy": "joined"})
+    tasks: list["Task"] = Relationship(back_populates="order", sa_relationship_kwargs={"lazy": "joined"})
 
     def __init__(self, id_: int = None, room_id: int = None):
         super().__init__(id=id_, room_id=room_id)
