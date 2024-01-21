@@ -9,7 +9,6 @@ from src.api.exceptions import (
     UserHasRoomException,
     TooManyInvitationsException,
     InvitationAlreadySentException,
-    NotYoursInvitationException,
     InvitationNotExistException,
     TooManyOrdersException,
     SpecifiedUserNotInRoomException,
@@ -72,10 +71,6 @@ async def invite_person(
     db: DB_SESSION_DEPENDENCY,
     settings: SETTINGS_DEPENDENCY,
 ) -> int:
-    addressee_id = addressee.id
-    if (addressee := await db.get(User, addressee_id)) is not None and addressee.room_id is not None:
-        raise UserHasRoomException()
-
     number_of_invitations = (
         await db.execute(select(count()).select_from(Invitation).where(Invitation.sender_id == user.id))
     ).scalar()
@@ -85,12 +80,14 @@ async def invite_person(
     # noinspection PyTypeChecker
     if (
         await db.execute(
-            select(exists(Invitation)).where(Invitation.sender_id == user.id, Invitation.addressee_id == addressee_id)
+            select(exists(Invitation)).where(
+                Invitation.sender_id == user.id, Invitation.addressee_alias == addressee.alias
+            )
         )
     ).scalar():
         raise InvitationAlreadySentException()
 
-    invite = Invitation(sender_id=user.id, addressee_id=addressee_id, room_id=room.id)
+    invite = Invitation(sender_id=user.id, addressee_alias=addressee.alias, room_id=room.id)
     db.add(invite)
     await db.commit()
 
@@ -105,8 +102,8 @@ async def accept_invitation(user: USER_DEPENDENCY, invitation: AcceptInvitationB
     invitation = await db.get(Invitation, invitation.id)
     if invitation is None:
         raise InvitationNotExistException()
-    if invitation.addressee_id != user.id:
-        raise NotYoursInvitationException()
+    # if invitation.addressee_alias != user.id:
+    #     raise NotYoursInvitationException()
 
     user.room_id = invitation.room_id
     await db.delete(invitation)

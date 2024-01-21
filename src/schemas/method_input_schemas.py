@@ -12,7 +12,7 @@ class CreateRoomBody(BaseModel):
 
 
 class InvitePersonBody(BaseModel):
-    id: int
+    alias: str = Field(max_length=32)
 
 
 class CreateOrderBody(BaseModel):
