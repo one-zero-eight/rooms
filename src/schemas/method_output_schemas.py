@@ -9,3 +9,13 @@ class TaskCurrentInfo(BaseModel):
 
 class DailyInfoResponse(BaseModel):
     tasks: list[TaskCurrentInfo]
+
+
+class IncomingInvitationInfo(BaseModel):
+    id: int
+    sender: int
+    room: int
+
+
+class IncomingInvitationsResponse(BaseModel):
+    invitations: list[IncomingInvitationInfo]

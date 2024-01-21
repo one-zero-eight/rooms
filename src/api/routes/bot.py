@@ -1,6 +1,7 @@
 from datetime import datetime
+from typing import Annotated
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Body, Depends
 from sqlalchemy import select, exists
 from sqlalchemy.sql.functions import count
 
@@ -22,6 +23,7 @@ from src.api.utils import (
     ROOM_DEPENDENCY,
     check_order_exists,
     check_task_exists,
+    user_dependency,
 )
 from src.config import SETTINGS_DEPENDENCY
 from src.db_sessions import DB_SESSION_DEPENDENCY
@@ -35,7 +37,12 @@ from src.schemas.method_input_schemas import (
     CreateTaskBody,
     ModifyTaskBody,
 )
-from src.schemas.method_output_schemas import DailyInfoResponse, TaskCurrentInfo
+from src.schemas.method_output_schemas import (
+    DailyInfoResponse,
+    TaskCurrentInfo,
+    IncomingInvitationsResponse,
+    IncomingInvitationInfo,
+)
 
 bot_router = APIRouter(prefix="/bot", dependencies=[BOT_ACCESS_DEPENDENCY])
 
@@ -78,7 +85,6 @@ async def invite_person(
     if number_of_invitations >= settings.MAX_INVITATIONS:
         raise TooManyInvitationsException()
 
-    # noinspection PyTypeChecker
     if (
         await db.execute(
             select(exists(Invitation)).where(
@@ -199,4 +205,24 @@ async def get_daily_info(room: ROOM_DEPENDENCY) -> DailyInfoResponse:
         # noinspection PyUnboundLocalVariable
         response.tasks.append(TaskCurrentInfo(id=task.id, name=task.name, today_user_id=todays_executor.user_id))
 
+    return response
+
+
+@bot_router.post(
+    "/user/incoming_invitations",
+    dependencies=[Depends(user_dependency)],
+    response_description="A list of the invitations addressed to the user",
+)
+async def get_incoming_invitations(
+    alias: Annotated[str, Body(max_length=64)], db: DB_SESSION_DEPENDENCY
+) -> IncomingInvitationsResponse:
+    response = IncomingInvitationsResponse(invitations=[])
+    i: Invitation
+    for i in (await db.execute(select(Invitation).where(Invitation.addressee_alias == alias))).unique().scalars():
+        if i.expiration_date <= datetime.now():
+            await db.delete(i)
+            continue
+        response.invitations.append(IncomingInvitationInfo(id=i.id, sender=i.sender_id, room=i.room_id))
+
+    await db.commit()
     return response
