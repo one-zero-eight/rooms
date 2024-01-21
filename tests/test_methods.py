@@ -72,6 +72,11 @@ async def clear_db_before_start():
     await clear_db()
 
 
+"""
+ERROR TESTS
+"""
+
+
 def test_register_exists():
     r = post("/bot/user/create", {"user_id": 1})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
@@ -267,6 +272,26 @@ def test_modify_task_order_not_exist():
     )
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 107
+
+
+@pytest.mark.asyncio
+async def test_accept_invitation_expired():
+    async with sessionmaker.get_session() as db:
+        db.add(
+            Invitation(1001, 1, "lol", 1, datetime.now() - timedelta(days=get_settings().INVITATION_LIFESPAN_DAYS + 1))
+        )
+        await db.commit()
+    r = post(
+        "/bot/user/accept_invitation",
+        {"user_id": 3, "invitation": {"id": 1001}},
+    )
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 118
+
+
+"""
+SUCCESS TESTS
+"""
 
 
 def test_register():

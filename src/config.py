@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     MAX_INVITATIONS: int
     MAX_ORDERS: int
     MAX_TASKS: int
+    INVITATION_LIFESPAN_DAYS: int
 
     model_config = SettingsConfigDict(env_file=".env")
 

@@ -124,3 +124,8 @@ class SpecifiedUserNotExistException(MyException):
 class WrongRoomException(MyException):
     def __init__(self, obj: str):
         super().__init__(status.HTTP_400_BAD_REQUEST, 117, f"The {obj} does not belong to the room")
+
+
+class InvitationExpiredException(MyException):
+    def __init__(self):
+        super().__init__(status.HTTP_400_BAD_REQUEST, 118, "The invitation is expired")

@@ -14,6 +14,7 @@ from src.api.exceptions import (
     SpecifiedUserNotInRoomException,
     TooManyTasksException,
     SpecifiedUserNotExistException,
+    InvitationExpiredException,
 )
 from src.api.utils import (
     check_user_not_exists,
@@ -102,6 +103,10 @@ async def accept_invitation(user: USER_DEPENDENCY, invitation: AcceptInvitationB
     invitation = await db.get(Invitation, invitation.id)
     if invitation is None:
         raise InvitationNotExistException()
+    if invitation.expiration_date <= datetime.now():
+        await db.delete(invitation)
+        await db.commit()
+        raise InvitationExpiredException()
     # if invitation.addressee_alias != user.id:
     #     raise NotYoursInvitationException()
 
