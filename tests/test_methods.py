@@ -133,6 +133,12 @@ def test_incoming_invitations_user_not_exist():
     assert r.json()["code"] == 102
 
 
+def test_room_info_user_not_exist():
+    r = post("/bot/room/info", {"user_id": 0})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 102
+
+
 def test_create_room_user_has_room():
     r = post("/bot/room/create", {"user_id": 1, "room": {"name": "a"}})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
@@ -179,6 +185,12 @@ def test_modify_task_user_has_no_room():
 
 def test_daily_info_user_has_no_room():
     r = post("/bot/room/daily_info", {"user_id": 3})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 105
+
+
+def test_room_info_user_has_no_room():
+    r = post("/bot/room/info", {"user_id": 3})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 105
 
@@ -442,3 +454,8 @@ def test_incoming_invitations():
         {"id": 1, "sender": 1, "room": 1} in (invitations := r.json()["invitations"])
         and {"id": inv2, "sender": 2, "room": 1} in invitations
     )
+
+
+def test_room_info():
+    r = post("/bot/room/info", {"user_id": 1})
+    assert r.status_code == 200 and ((info := r.json())["name"] == "room1" and set(info["users"]) == {1, 2})

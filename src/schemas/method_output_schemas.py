@@ -19,3 +19,8 @@ class IncomingInvitationInfo(BaseModel):
 
 class IncomingInvitationsResponse(BaseModel):
     invitations: list[IncomingInvitationInfo]
+
+
+class RoomInfoResponse(BaseModel):
+    name: str
+    users: list[int]

@@ -42,6 +42,7 @@ from src.schemas.method_output_schemas import (
     TaskCurrentInfo,
     IncomingInvitationsResponse,
     IncomingInvitationInfo,
+    RoomInfoResponse,
 )
 
 bot_router = APIRouter(prefix="/bot", dependencies=[BOT_ACCESS_DEPENDENCY])
@@ -226,3 +227,9 @@ async def get_incoming_invitations(
 
     await db.commit()
     return response
+
+
+@bot_router.post("/room/info", response_description="Info about the user's room")
+async def get_room_info(room: ROOM_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> RoomInfoResponse:
+    users = [id_ for id_ in (await db.execute(select(User.id).where(User.room_id == room.id))).unique().scalars()]
+    return RoomInfoResponse(name=room.name, users=users)
