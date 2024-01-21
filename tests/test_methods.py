@@ -21,8 +21,7 @@ def post(url: str, json: dict) -> Response:
     return client.post(url, json=json, headers={"X-Token": TOKEN})
 
 
-@pytest_asyncio.fixture(autouse=True)
-async def setup_data_in_db():
+async def clear_db():
     async with sessionmaker.get_session() as session:
         await session.execute(delete(Invitation))
         await session.execute(delete(TaskExecutor))
@@ -32,7 +31,13 @@ async def setup_data_in_db():
         await session.execute(delete(User))
         await session.commit()
 
+
+@pytest_asyncio.fixture(autouse=True)
+async def setup_data_in_db():
+    async with sessionmaker.get_session() as session:
         # IMPORTANT: be careful with default autoincrement and fixed IDs
+        # this file currently sets all ids from code
+        # a test's ids start from 1000
         session.add(User(1, 1))
         session.add(User(2, 1))
         session.add(User(3))
@@ -56,6 +61,15 @@ async def setup_data_in_db():
                     )
                 )
         await session.commit()
+
+        yield
+
+        await clear_db()
+
+
+@pytest_asyncio.fixture(scope="session", autouse=True)
+async def clear_db_before_start():
+    await clear_db()
 
 
 def test_register_exists():
