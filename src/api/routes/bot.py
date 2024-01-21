@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Body, Depends
-from sqlalchemy import select, exists
+from sqlalchemy import select, exists, delete
 from sqlalchemy.sql.functions import count
 
 from src.api.auth.utils import BOT_ACCESS_DEPENDENCY
@@ -233,3 +233,16 @@ async def get_incoming_invitations(
 async def get_room_info(room: ROOM_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> RoomInfoResponse:
     users = [id_ for id_ in (await db.execute(select(User.id).where(User.room_id == room.id))).unique().scalars()]
     return RoomInfoResponse(name=room.name, users=users)
+
+
+@bot_router.post("/room/leave", response_description="True if the operation was successful")
+async def leave_room(user: USER_DEPENDENCY, room: ROOM_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> bool:
+    room_users = (await db.execute(select(count()).where(User.room_id == room.id))).scalar()
+    user.room_id = None
+    await db.commit()
+    if room_users == 1:
+        # await db.delete(room)
+        # does not work for some reason causing UPDATE invitations SET NULL
+        await db.execute(delete(Room).where(Room.id == room.id))
+    await db.commit()
+    return True

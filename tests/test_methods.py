@@ -4,7 +4,7 @@ import pytest
 import pytest_asyncio
 from fastapi.testclient import TestClient
 from httpx import Response
-from sqlalchemy import delete, text
+from sqlalchemy import delete, text, exists, select
 
 from src.api.auth.utils import create_jwt
 from src.config import get_settings
@@ -139,6 +139,12 @@ def test_room_info_user_not_exist():
     assert r.json()["code"] == 102
 
 
+def test_leave_room_user_not_exist():
+    r = post("/bot/room/leave", {"user_id": 0})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 102
+
+
 def test_create_room_user_has_room():
     r = post("/bot/room/create", {"user_id": 1, "room": {"name": "a"}})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
@@ -190,6 +196,12 @@ def test_daily_info_user_has_no_room():
 
 
 def test_room_info_user_has_no_room():
+    r = post("/bot/room/info", {"user_id": 3})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 105
+
+
+def test_leave_room_user_has_no_room():
     r = post("/bot/room/info", {"user_id": 3})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 105
@@ -459,3 +471,23 @@ def test_incoming_invitations():
 def test_room_info():
     r = post("/bot/room/info", {"user_id": 1})
     assert r.status_code == 200 and ((info := r.json())["name"] == "room1" and set(info["users"]) == {1, 2})
+
+
+@pytest.mark.asyncio
+async def test_leave_room():
+    r = post("/bot/room/leave", {"user_id": 1})
+    assert r.status_code == 200 and r.json() is True
+    async with sessionmaker.get_session() as db:
+        assert (await db.get(User, 1)).room_id is None and (
+            await db.execute(select(exists(Room)).where(Room.id == 2))
+        ).scalar()
+
+
+@pytest.mark.asyncio
+async def test_leave_room_delete_room():
+    r = post("/bot/room/leave", {"user_id": 4})
+    assert r.status_code == 200 and r.json() is True
+    async with sessionmaker.get_session() as db:
+        assert (await db.get(User, 4)).room_id is None and not (
+            await db.execute(select(exists(Room)).where(Room.id == 2))
+        ).scalar()
