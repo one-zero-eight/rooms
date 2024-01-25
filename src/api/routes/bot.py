@@ -39,10 +39,12 @@ from src.schemas.method_input_schemas import (
 )
 from src.schemas.method_output_schemas import (
     DailyInfoResponse,
-    TaskCurrentInfo,
+    TaskDailyInfo,
     IncomingInvitationsResponse,
     IncomingInvitationInfo,
     RoomInfoResponse,
+    TaskListResponse,
+    Task as TaskInfo,
 )
 
 bot_router = APIRouter(prefix="/bot", dependencies=[BOT_ACCESS_DEPENDENCY])
@@ -207,7 +209,7 @@ async def get_daily_info(room: ROOM_DEPENDENCY) -> DailyInfoResponse:
                 break
 
         # noinspection PyUnboundLocalVariable
-        response.tasks.append(TaskCurrentInfo(id=task.id, name=task.name, today_user_id=todays_executor.user_id))
+        response.tasks.append(TaskDailyInfo(id=task.id, name=task.name, today_user_id=todays_executor.user_id))
 
     return response
 
@@ -249,3 +251,16 @@ async def leave_room(user: USER_DEPENDENCY, room: ROOM_DEPENDENCY, db: DB_SESSIO
         await db.execute(delete(Room).where(Room.id == room.id))
     await db.commit()
     return True
+
+
+@bot_router.post("/task/list", response_description="The full list of a room's tasks")
+async def get_tasks(room: ROOM_DEPENDENCY) -> TaskListResponse:
+    response = TaskListResponse(tasks=[])
+    task: Task
+    for task in room.tasks:
+        inactive = False
+        if task.order_id is None or task.start_date > datetime.now():
+            inactive = True
+        response.tasks.append(TaskInfo(id=task.id, name=task.name, inactive=inactive))
+
+    return response

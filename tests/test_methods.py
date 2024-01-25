@@ -145,6 +145,12 @@ def test_leave_room_user_not_exist():
     assert r.json()["code"] == 102
 
 
+def test_get_tasks_user_not_exist():
+    r = post("/bot/task/list", {"user_id": 0})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 102
+
+
 def test_create_room_user_has_room():
     r = post("/bot/room/create", {"user_id": 1, "room": {"name": "a"}})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
@@ -203,6 +209,12 @@ def test_room_info_user_has_no_room():
 
 def test_leave_room_user_has_no_room():
     r = post("/bot/room/info", {"user_id": 3})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 105
+
+
+def test_get_tasks_user_has_no_room():
+    r = post("/bot/task/list", {"user_id": 3})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 105
 
@@ -421,7 +433,7 @@ async def test_modify_task():
     assert r.status_code == 200 and r.json() is True
 
 
-def test_daily_info():
+def setup_some_tasks():
     post("/bot/user/create", {"user_id": 1001})
     post("/bot/user/create", {"user_id": 1002})
     post("/bot/room/create", {"user_id": 1001, "room": {"name": "1001"}})
@@ -452,7 +464,7 @@ def test_daily_info():
             },
         },
     ).json()
-    task_not_active = post(
+    task_inactive_1 = post(
         "/bot/task/create",
         {
             "user_id": 1001,
@@ -464,12 +476,30 @@ def test_daily_info():
             },
         },
     ).json()
+    task_inactive_2 = post(
+        "/bot/task/create",
+        {
+            "user_id": 1001,
+            "task": {
+                "name": "task1004",
+                "start_date": (datetime.now().astimezone() - timedelta(days=1)).isoformat(),
+                "period": 1,
+                "order_id": None,
+            },
+        },
+    ).json()
+
+    return task1, task2, task_inactive_1, task_inactive_2
+
+
+def test_daily_info():
+    task1, task2, task_inactive_1, task_inactive_2 = setup_some_tasks()
     r = post("/bot/room/daily_info", {"user_id": 1001})
     assert r.status_code == 200 and (
         len(tasks := r.json()["tasks"]) == 2
         and {"id": task1, "name": "task1001", "today_user_id": 1001} in tasks
         and {"id": task2, "name": "task1002", "today_user_id": 1002} in tasks
-        and not any(map(lambda t: t["id"] == task_not_active, tasks))
+        and not any(map(lambda t: t["id"] == task_inactive_1 or t["id"] == task_inactive_2, tasks))
     )
 
 
@@ -505,3 +535,15 @@ async def test_leave_room_delete_room():
         assert (await db.get(User, 4)).room_id is None and not (
             await db.execute(select(exists(Room)).where(Room.id == 2))
         ).scalar()
+
+
+def test_task_list():
+    task1, task2, task_inactive_1, task_inactive_2 = setup_some_tasks()
+    r = post("/bot/task/list", {"user_id": 1001})
+    assert r.status_code == 200 and (
+        len(tasks := r.json()["tasks"]) == 4
+        and {"id": task1, "name": "task1001", "inactive": False} in tasks
+        and {"id": task2, "name": "task1002", "inactive": False} in tasks
+        and {"id": task_inactive_1, "name": "task1003", "inactive": True} in tasks
+        and {"id": task_inactive_2, "name": "task1004", "inactive": True} in tasks
+    )
