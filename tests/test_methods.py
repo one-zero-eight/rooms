@@ -452,10 +452,24 @@ def test_daily_info():
             },
         },
     ).json()
+    task_not_active = post(
+        "/bot/task/create",
+        {
+            "user_id": 1001,
+            "task": {
+                "name": "task1003",
+                "start_date": (datetime.now().astimezone() + timedelta(days=1)).isoformat(),
+                "period": 1,
+                "order_id": order_id,
+            },
+        },
+    ).json()
     r = post("/bot/room/daily_info", {"user_id": 1001})
     assert r.status_code == 200 and (
-        {"id": task1, "name": "task1001", "today_user_id": 1001} in (tasks := r.json()["tasks"])
+        len(tasks := r.json()["tasks"]) == 2
+        and {"id": task1, "name": "task1001", "today_user_id": 1001} in tasks
         and {"id": task2, "name": "task1002", "today_user_id": 1002} in tasks
+        and not any(map(lambda t: t["id"] == task_not_active, tasks))
     )
 
 
