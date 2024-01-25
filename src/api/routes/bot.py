@@ -159,16 +159,19 @@ async def create_task(
     number_of_tasks = len(room.tasks)
     if number_of_tasks >= settings.MAX_TASKS:
         raise TooManyTasksException()
-    order = await check_order_exists(task.order_id, room.id, db)
 
-    task = Task(name=task.name, description=task.description, start_date=task.start_date, period=task.period)
-    task.room_id = room.id
-    task.order_id = order.id
-    db.add(task)
+    task_obj = Task(name=task.name, description=task.description, start_date=task.start_date, period=task.period)
+    task_obj.room_id = room.id
+    if task.order_id is not None:
+        order = await check_order_exists(task.order_id, room.id, db)
+        task_obj.order_id = order.id
+    else:
+        task_obj.order_id = None
+    db.add(task_obj)
 
     await db.commit()
 
-    return task.id
+    return task_obj.id
 
 
 @bot_router.post("/task/modify", response_description="True if the operation was successful")
