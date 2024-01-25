@@ -191,7 +191,7 @@ async def get_daily_info(room: ROOM_DEPENDENCY) -> DailyInfoResponse:
     task: Task
     for task in room.tasks:
         if task.order_id is None or task.start_date > datetime.now():
-            response.tasks.append(TaskCurrentInfo(id=task.id, name=task.name, today_user_id=None))
+            continue
 
         executors = task.order.executors
         i = (datetime.now() - task.start_date).days % len(executors)
