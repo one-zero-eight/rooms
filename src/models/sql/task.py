@@ -47,3 +47,6 @@ class Task(SQLModel, table=True):
             f"Task(id={self.id}, name={repr(self.name)}, description={repr(self.description)}, room_id={self.room_id}, "
             f"start_date={repr(self.start_date)}, period={self.period}, order_id={self.order_id})"
         )
+
+    def is_inactive(self) -> bool:
+        return self.order_id is None or self.start_date > datetime.now()

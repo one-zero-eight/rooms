@@ -47,10 +47,16 @@ async def setup_data_in_db():
         session.add(Room(2, "room2"))
         session.add(Invitation(1, 1, "alias3", 1))
         session.add(Invitation(2, 1, "alias4", 2))
+
         session.add(Order(1, 1))
         session.add(TaskExecutor(2, 1, 0))
         session.add(TaskExecutor(1, 1, 1))
         session.add(Task(1, "task1", "bla-bla", 1, datetime.now() - timedelta(hours=12), 1, 1))
+
+        session.add(Order(2, 2))
+        session.add(TaskExecutor(4, 2, 0))
+        session.add(Task(2, "task2", "bla-bla", 2, datetime.now() - timedelta(hours=12), 1, None))
+
         await session.commit()
 
         if "postgresql" in get_settings().DB_URL:
@@ -151,6 +157,15 @@ def test_get_tasks_user_not_exist():
     assert r.json()["code"] == 102
 
 
+def test_get_task_info_user_not_exist():
+    r = post("/bot/task/info", {"user_id": 0})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 102
+
+
+#############################
+
+
 def test_create_room_user_has_room():
     r = post("/bot/room/create", {"user_id": 1, "room": {"name": "a"}})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
@@ -215,6 +230,12 @@ def test_leave_room_user_has_no_room():
 
 def test_get_tasks_user_has_no_room():
     r = post("/bot/task/list", {"user_id": 3})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 105
+
+
+def test_get_task_info_user_has_no_room():
+    r = post("/bot/task/info", {"user_id": 3})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 105
 
@@ -298,10 +319,19 @@ def test_create_task_order_not_exist():
     assert r.json()["code"] == 107
 
 
-def test_modify_task_not_exist():
+def test_modify_task_task_not_exist():
     r = post(
         "/bot/task/modify",
         {"user_id": 1, "task": {"id": 0, "name": "one", "start_date": 0, "period": 1, "order_id": 1}},
+    )
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 108
+
+
+def test_get_task_info_task_not_exist():
+    r = post(
+        "/bot/task/info",
+        {"user_id": 1, "task": {"id": 0}},
     )
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 108
@@ -314,6 +344,33 @@ def test_modify_task_order_not_exist():
     )
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 107
+
+
+def test_modify_task_not_yours_task():
+    r = post(
+        "/bot/task/modify",
+        {"user_id": 4, "task": {"id": 1, "name": "one", "start_date": 0, "period": 1, "order_id": 1}},
+    )
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 117
+
+
+def test_modify_task_not_yours_order():
+    r = post(
+        "/bot/task/modify",
+        {"user_id": 4, "task": {"id": 2, "name": "one", "start_date": 0, "period": 1, "order_id": 1}},
+    )
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 117
+
+
+def test_get_task_info_not_yours_task():
+    r = post(
+        "/bot/task/info",
+        {"user_id": 4, "task": {"id": 1}},
+    )
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 117
 
 
 @pytest.mark.asyncio

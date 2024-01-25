@@ -38,3 +38,7 @@ class ModifyTaskBody(BaseModel):
     start_date: datetime | None = None
     period: int | None = Field(None, gt=0, description="period in days")
     order_id: int | None = None
+
+
+class TaskInfoBody(BaseModel):
+    id: int

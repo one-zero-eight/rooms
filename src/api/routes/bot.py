@@ -36,6 +36,7 @@ from src.schemas.method_input_schemas import (
     CreateOrderBody,
     CreateTaskBody,
     ModifyTaskBody,
+    TaskInfoBody,
 )
 from src.schemas.method_output_schemas import (
     DailyInfoResponse,
@@ -45,6 +46,7 @@ from src.schemas.method_output_schemas import (
     RoomInfoResponse,
     TaskListResponse,
     Task as TaskInfo,
+    TaskInfoResponse,
 )
 
 bot_router = APIRouter(prefix="/bot", dependencies=[BOT_ACCESS_DEPENDENCY])
@@ -195,7 +197,7 @@ async def get_daily_info(room: ROOM_DEPENDENCY) -> DailyInfoResponse:
     response = DailyInfoResponse(tasks=[])
     task: Task
     for task in room.tasks:
-        if task.order_id is None or task.start_date > datetime.now():
+        if task.is_inactive():
             continue
 
         executors = task.order.executors
@@ -258,9 +260,22 @@ async def get_tasks(room: ROOM_DEPENDENCY) -> TaskListResponse:
     response = TaskListResponse(tasks=[])
     task: Task
     for task in room.tasks:
-        inactive = False
-        if task.order_id is None or task.start_date > datetime.now():
-            inactive = True
+        inactive = task.is_inactive()
         response.tasks.append(TaskInfo(id=task.id, name=task.name, inactive=inactive))
+
+    return response
+
+
+@bot_router.post("/task/info", response_description="The task's details")
+async def get_task_info(room: ROOM_DEPENDENCY, task: TaskInfoBody, db: DB_SESSION_DEPENDENCY) -> TaskInfoResponse:
+    task = await check_task_exists(task.id, room.id, db)
+    response = TaskInfoResponse(
+        name=task.name,
+        description=task.description,
+        start_date=task.start_date,
+        period=task.period,
+        order_id=task.order_id,
+        inactive=task.is_inactive(),
+    )
 
     return response
