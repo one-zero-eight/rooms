@@ -47,6 +47,8 @@ from src.schemas.method_output_schemas import (
     TaskListResponse,
     Task as TaskInfo,
     TaskInfoResponse,
+    SentInvitationsResponse,
+    SentInvitationInfo,
 )
 
 bot_router = APIRouter(prefix="/bot", dependencies=[BOT_ACCESS_DEPENDENCY])
@@ -279,3 +281,14 @@ async def get_task_info(room: ROOM_DEPENDENCY, task: TaskInfoBody, db: DB_SESSIO
     )
 
     return response
+
+
+@bot_router.post("/invitation/sent", response_description="The list of sent invitations")
+async def get_sent_invitations(user: USER_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> SentInvitationsResponse:
+    invitations: list[SentInvitationInfo] = []
+    i: Invitation
+    for i in (await db.execute(select(Invitation).where(Invitation.sender_id == user.id))).unique().scalars():
+        print(i)
+        invitations.append(SentInvitationInfo(id=i.id, addressee=i.addressee_alias, room=i.room_id))
+
+    return SentInvitationsResponse(invitations=invitations)

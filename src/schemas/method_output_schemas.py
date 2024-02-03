@@ -45,3 +45,13 @@ class TaskInfoResponse(BaseModel):
     period: int
     order_id: int | None
     inactive: bool
+
+
+class SentInvitationInfo(BaseModel):
+    id: int
+    addressee: str
+    room: int
+
+
+class SentInvitationsResponse(BaseModel):
+    invitations: list[SentInvitationInfo]

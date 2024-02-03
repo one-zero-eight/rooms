@@ -164,6 +164,12 @@ def test_get_task_info_user_not_exist():
     assert r.json()["code"] == 102
 
 
+def test_get_sent_invitations_user_not_exist():
+    r = post("/bot/invitation/sent", {"user_id": 0})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 102
+
+
 #############################
 
 
@@ -622,4 +628,13 @@ def test_get_task_info_inactive():
     t = TaskInfoResponse.model_validate(r.json())
     assert t == TaskInfoResponse(
         name="task2", description="bla-bla", start_date=t.start_date, period=1, order_id=None, inactive=True
+    )
+
+
+def test_get_sent_invitations():
+    r = post("/bot/invitation/sent", {"user_id": 1})
+    assert r.status_code == 200 and (
+        len(invites := r.json()["invitations"]) == 2
+        and {"id": 1, "addressee": "alias3", "room": 1} in invites
+        and {"id": 2, "addressee": "alias4", "room": 2} in invites
     )
