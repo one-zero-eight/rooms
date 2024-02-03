@@ -39,6 +39,7 @@ from src.schemas.method_input_schemas import (
     ModifyTaskBody,
     TaskInfoBody,
     DeleteInvitationBody,
+    RejectInvitationBody,
 )
 from src.schemas.method_output_schemas import (
     DailyInfoResponse,
@@ -122,6 +123,7 @@ async def accept_invitation(user: USER_DEPENDENCY, invitation: AcceptInvitationB
         await db.delete(invitation)
         await db.commit()
         raise InvitationExpiredException()
+    # temporary commented (until issue #15)
     # if invitation.addressee_alias != user.id:
     #     raise NotYoursInvitationException()
 
@@ -298,6 +300,23 @@ async def get_sent_invitations(user: USER_DEPENDENCY, db: DB_SESSION_DEPENDENCY)
 @bot_router.post("/invitation/delete", response_description="True if the invitation was deleted")
 async def delete_invitation(user: USER_DEPENDENCY, invitation: DeleteInvitationBody, db: DB_SESSION_DEPENDENCY) -> bool:
     invitation = await check_invitation_exists(invitation.id, user.id, db)
+    await db.delete(invitation)
+    await db.commit()
+
+    return True
+
+
+# temporary (until issue #15)
+# noinspection PyUnusedLocal
+@bot_router.post("/invitation/reject", response_description="True if the invitation was rejected")
+async def reject_invitation(user: USER_DEPENDENCY, invitation: RejectInvitationBody, db: DB_SESSION_DEPENDENCY) -> bool:
+    invitation = await db.get(Invitation, invitation.id)
+    if invitation is None:
+        raise InvitationNotExistException()
+    # temporary commented (until issue #15)
+    # if invitation.addressee_alias != user.id:
+    #     raise NotYoursInvitationException()
+
     await db.delete(invitation)
     await db.commit()
 

@@ -176,6 +176,12 @@ def test_delete_invitation_user_not_exist():
     assert r.json()["code"] == 102
 
 
+def test_reject_invitation_user_not_exist():
+    r = post("/bot/invitation/reject", {"user_id": 0})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 102
+
+
 #############################
 
 
@@ -314,6 +320,12 @@ def test_delete_invitation_not_exist():
     assert r.json()["code"] == 111
 
 
+def test_reject_invitation_not_exist():
+    r = post("/bot/invitation/reject", {"user_id": 3, "invitation": {"id": 0}})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 111
+
+
 # def test_accept_invitation_not_yours():
 #     r = post("/bot/invitation/accept", {"user_id": 5, "invitation": {"id": 1}})
 #     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
@@ -393,6 +405,13 @@ def test_delete_invitation_not_yours_invitation():
     r = post("/bot/invitation/delete", {"user_id": 4, "invitation": {"id": 1}})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 112
+
+
+# temporary commented (until issue #15)
+# def test_reject_invitation_not_yours_invitation():
+#     r = post("/bot/invitation/reject", {"user_id": 2, "invitation": {"id": 1}})
+#     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+#     assert r.json()["code"] == 112
 
 
 @pytest.mark.asyncio
@@ -658,6 +677,14 @@ def test_get_sent_invitations():
 @pytest.mark.asyncio
 async def test_delete_invitation():
     r = post("/bot/invitation/delete", {"user_id": 1, "invitation": {"id": 1}})
+    assert r.status_code == 200 and r.json() is True
+    async with sessionmaker.get_session() as db:
+        assert await db.get(Invitation, 1) is None
+
+
+@pytest.mark.asyncio
+async def test_reject_invitation():
+    r = post("/bot/invitation/reject", {"user_id": 3, "invitation": {"id": 1}})
     assert r.status_code == 200 and r.json() is True
     async with sessionmaker.get_session() as db:
         assert await db.get(Invitation, 1) is None
