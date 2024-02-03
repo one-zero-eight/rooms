@@ -290,7 +290,6 @@ async def get_sent_invitations(user: USER_DEPENDENCY, db: DB_SESSION_DEPENDENCY)
     invitations: list[SentInvitationInfo] = []
     i: Invitation
     for i in (await db.execute(select(Invitation).where(Invitation.sender_id == user.id))).unique().scalars():
-        print(i)
         invitations.append(SentInvitationInfo(id=i.id, addressee=i.addressee_alias, room=i.room_id))
 
     return SentInvitationsResponse(invitations=invitations)
