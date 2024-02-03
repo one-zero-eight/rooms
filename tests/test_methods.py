@@ -11,6 +11,7 @@ from src.config import get_settings
 from src.db_sessions.sqlalchemy_session import sessionmaker
 from src.main import app
 from src.models.sql import User, Room, Task, Order, TaskExecutor, Invitation
+from src.schemas.method_output_schemas import TaskInfoResponse
 
 client = TestClient(app)
 
@@ -594,7 +595,7 @@ async def test_leave_room_delete_room():
         ).scalar()
 
 
-def test_task_list():
+def test_get_task_list():
     task1, task2, task_inactive_1, task_inactive_2 = setup_some_tasks()
     r = post("/bot/task/list", {"user_id": 1001})
     assert r.status_code == 200 and (
@@ -603,4 +604,22 @@ def test_task_list():
         and {"id": task2, "name": "task1002", "inactive": False} in tasks
         and {"id": task_inactive_1, "name": "task1003", "inactive": True} in tasks
         and {"id": task_inactive_2, "name": "task1004", "inactive": True} in tasks
+    )
+
+
+def test_get_task_info_active():
+    r = post("/bot/task/info", {"user_id": 1, "task": {"id": 1}})
+    assert r.status_code == 200
+    t = TaskInfoResponse.model_validate(r.json())
+    assert t == TaskInfoResponse(
+        name="task1", description="bla-bla", start_date=t.start_date, period=1, order_id=1, inactive=False
+    )
+
+
+def test_get_task_info_inactive():
+    r = post("/bot/task/info", {"user_id": 4, "task": {"id": 2}})
+    assert r.status_code == 200
+    t = TaskInfoResponse.model_validate(r.json())
+    assert t == TaskInfoResponse(
+        name="task2", description="bla-bla", start_date=t.start_date, period=1, order_id=None, inactive=True
     )
