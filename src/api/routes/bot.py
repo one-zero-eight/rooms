@@ -24,6 +24,7 @@ from src.api.utils import (
     check_order_exists,
     check_task_exists,
     user_dependency,
+    check_invitation_exists,
 )
 from src.config import SETTINGS_DEPENDENCY
 from src.db_sessions import DB_SESSION_DEPENDENCY
@@ -37,6 +38,7 @@ from src.schemas.method_input_schemas import (
     CreateTaskBody,
     ModifyTaskBody,
     TaskInfoBody,
+    DeleteInvitationBody,
 )
 from src.schemas.method_output_schemas import (
     DailyInfoResponse,
@@ -292,3 +294,12 @@ async def get_sent_invitations(user: USER_DEPENDENCY, db: DB_SESSION_DEPENDENCY)
         invitations.append(SentInvitationInfo(id=i.id, addressee=i.addressee_alias, room=i.room_id))
 
     return SentInvitationsResponse(invitations=invitations)
+
+
+@bot_router.post("/invitation/delete", response_description="True if the invitation was deleted")
+async def delete_invitation(user: USER_DEPENDENCY, invitation: DeleteInvitationBody, db: DB_SESSION_DEPENDENCY) -> bool:
+    invitation = await check_invitation_exists(invitation.id, user.id, db)
+    await db.delete(invitation)
+    await db.commit()
+
+    return True

@@ -42,3 +42,7 @@ class ModifyTaskBody(BaseModel):
 
 class TaskInfoBody(BaseModel):
     id: int
+
+
+class DeleteInvitationBody(BaseModel):
+    id: int

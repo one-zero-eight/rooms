@@ -12,9 +12,11 @@ from src.api.exceptions import (
     UserNotExistException,
     UserExistsException,
     WrongRoomException,
+    InvitationNotExistException,
+    NotYoursInvitationException,
 )
 from src.db_sessions import DB_SESSION_DEPENDENCY
-from src.models.sql import User, Room, Order, Task
+from src.models.sql import User, Room, Order, Task, Invitation
 
 
 async def check_user_not_exists(user_id: int, db: AsyncSession):
@@ -74,3 +76,12 @@ async def check_task_exists(task_id: int, room_id: int, db: AsyncSession) -> Tas
         raise WrongRoomException("task")
     # noinspection PyTypeChecker
     return task
+
+
+async def check_invitation_exists(invitation_id: int, sender_id: int, db: AsyncSession) -> Invitation:
+    if (invitation := await db.get(Invitation, invitation_id)) is None:
+        raise InvitationNotExistException()
+    if invitation.sender_id != sender_id:
+        raise NotYoursInvitationException()
+    # noinspection PyTypeChecker
+    return invitation
