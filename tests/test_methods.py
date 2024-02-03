@@ -96,13 +96,13 @@ def test_create_room_user_not_exist():
 
 
 def test_invite_person_user_not_exist():
-    r = post("/bot/user/invite", {"user_id": 0, "addressee": {"alias": "me_not_exists"}})
+    r = post("/bot/invitation/create", {"user_id": 0, "addressee": {"alias": "me_not_exists"}})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 102
 
 
 def test_accept_invitation_user_not_exist():
-    r = post("/bot/user/accept_invitation", {"user_id": 0, "invitation": {"id": 1}})
+    r = post("/bot/invitation/accept", {"user_id": 0, "invitation": {"id": 1}})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 102
 
@@ -134,7 +134,7 @@ def test_daily_info_user_not_exist():
 
 
 def test_incoming_invitations_user_not_exist():
-    r = post("/bot/user/incoming_invitations", {"user_id": 0, "alias": "a"})
+    r = post("/bot/invitation/inbox", {"user_id": 0, "alias": "a"})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 102
 
@@ -173,19 +173,19 @@ def test_create_room_user_has_room():
 
 
 # def test_invite_user_addressee_has_room():
-#     r = post("/bot/user/invite", {"user_id": 1, "addressee": {"id": 2}})
+#     r = post("/bot/invitation/create", {"user_id": 1, "addressee": {"id": 2}})
 #     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
 #     assert r.json()["code"] == 106
 
 
 def test_accept_invitation_user_has_room():
-    r = post("/bot/user/accept_invitation", {"user_id": 4, "invitation": {"id": 2}})
+    r = post("/bot/invitation/accept", {"user_id": 4, "invitation": {"id": 2}})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 106
 
 
 def test_invite_user_user_has_no_room():
-    r = post("/bot/user/invite", {"user_id": 3, "addressee": {"alias": "no_room"}})
+    r = post("/bot/invitation/create", {"user_id": 3, "addressee": {"alias": "no_room"}})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 105
 
@@ -248,7 +248,7 @@ async def test_invite_too_many():
         for i in range(get_settings().MAX_INVITATIONS):
             db.add(Invitation(id_=1001 + i, sender_id=1001, addressee_alias="durov", room_id=1001))
         await db.commit()
-    r = post("/bot/user/invite", {"user_id": 1001, "addressee": {"alias": "alias3"}})
+    r = post("/bot/invitation/create", {"user_id": 1001, "addressee": {"alias": "alias3"}})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 109
 
@@ -284,19 +284,19 @@ async def test_create_task_too_many():
 
 
 def test_invite_already_sent():
-    r = post("/bot/user/invite", {"user_id": 1, "addressee": {"alias": "alias3"}})
+    r = post("/bot/invitation/create", {"user_id": 1, "addressee": {"alias": "alias3"}})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 110
 
 
 def test_accept_invitation_not_exist():
-    r = post("/bot/user/accept_invitation", {"user_id": 3, "invitation": {"id": 0}})
+    r = post("/bot/invitation/accept", {"user_id": 3, "invitation": {"id": 0}})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 111
 
 
 # def test_accept_invitation_not_yours():
-#     r = post("/bot/user/accept_invitation", {"user_id": 5, "invitation": {"id": 1}})
+#     r = post("/bot/invitation/accept", {"user_id": 5, "invitation": {"id": 1}})
 #     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
 #     assert r.json()["code"] == 112
 
@@ -381,7 +381,7 @@ async def test_accept_invitation_expired():
         )
         await db.commit()
     r = post(
-        "/bot/user/accept_invitation",
+        "/bot/invitation/accept",
         {"user_id": 3, "invitation": {"id": 1001}},
     )
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
@@ -413,7 +413,7 @@ async def test_invite():
         db.add(User(1001, 1001))
         db.add(Room(1001, "1001"))
         await db.commit()
-    r = post("/bot/user/invite", {"user_id": 1001, "addressee": {"alias": "top_alias"}})
+    r = post("/bot/invitation/create", {"user_id": 1001, "addressee": {"alias": "top_alias"}})
     assert r.status_code == 200 and isinstance(r.json(), int)
 
 
@@ -425,7 +425,7 @@ async def test_accept_invitation():
         db.add(Room(1001, "1001"))
         db.add(Invitation(1001, 1001, "alias1002", 1001))
         await db.commit()
-    r = post("/bot/user/accept_invitation", {"user_id": 1002, "invitation": {"id": 1001}})
+    r = post("/bot/invitation/accept", {"user_id": 1002, "invitation": {"id": 1001}})
     assert r.status_code == 200 and r.json() == 1001
 
 
@@ -494,8 +494,8 @@ def setup_some_tasks():
     post("/bot/user/create", {"user_id": 1001})
     post("/bot/user/create", {"user_id": 1002})
     post("/bot/room/create", {"user_id": 1001, "room": {"name": "1001"}})
-    invitation = post("/bot/user/invite", {"user_id": 1001, "addressee": {"alias": "daily_alias"}}).json()
-    post("/bot/user/accept_invitation", {"user_id": 1002, "invitation": {"id": invitation}})
+    invitation = post("/bot/invitation/create", {"user_id": 1001, "addressee": {"alias": "daily_alias"}}).json()
+    post("/bot/invitation/accept", {"user_id": 1002, "invitation": {"id": invitation}})
     order_id = post("/bot/order/create", {"user_id": 1001, "order": {"users": [1001, 1002]}}).json()
     task1 = post(
         "/bot/task/create",
@@ -561,8 +561,8 @@ def test_daily_info():
 
 
 def test_incoming_invitations():
-    inv2 = post("/bot/user/invite", {"user_id": 2, "addressee": {"alias": "alias3"}}).json()
-    r = post("/bot/user/incoming_invitations", {"user_id": 3, "alias": "alias3"})
+    inv2 = post("/bot/invitation/create", {"user_id": 2, "addressee": {"alias": "alias3"}}).json()
+    r = post("/bot/invitation/inbox", {"user_id": 3, "alias": "alias3"})
     assert r.status_code == 200 and (
         {"id": 1, "sender": 1, "room": 1} in (invitations := r.json()["invitations"])
         and {"id": inv2, "sender": 2, "room": 1} in invitations

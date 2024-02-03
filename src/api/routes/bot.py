@@ -76,7 +76,7 @@ async def create_room(user: USER_DEPENDENCY, room: CreateRoomBody, db: DB_SESSIO
     return room.id
 
 
-@bot_router.post("/user/invite", response_description="The id of created invitation")
+@bot_router.post("/invitation/create", response_description="The id of created invitation")
 async def invite_person(
     user: USER_DEPENDENCY,
     room: ROOM_DEPENDENCY,
@@ -106,7 +106,7 @@ async def invite_person(
     return invite.id
 
 
-@bot_router.post("/user/accept_invitation", response_description="The id of the room the invitation led to")
+@bot_router.post("/invitation/accept", response_description="The id of the room the invitation led to")
 async def accept_invitation(user: USER_DEPENDENCY, invitation: AcceptInvitationBody, db: DB_SESSION_DEPENDENCY) -> int:
     if user.room_id is not None:
         raise UserHasRoomException()
@@ -217,9 +217,9 @@ async def get_daily_info(room: ROOM_DEPENDENCY) -> DailyInfoResponse:
 
 
 @bot_router.post(
-    "/user/incoming_invitations",
+    "/invitation/inbox",
     dependencies=[Depends(user_dependency)],
-    response_description="A list of the invitations addressed to the user",
+    response_description="A list of the invitations addressed to a user",
 )
 async def get_incoming_invitations(
     alias: Annotated[str, Body(max_length=64)], db: DB_SESSION_DEPENDENCY
