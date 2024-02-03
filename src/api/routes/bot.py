@@ -40,6 +40,7 @@ from src.schemas.method_input_schemas import (
     TaskInfoBody,
     DeleteInvitationBody,
     RejectInvitationBody,
+    OrderInfoBody,
 )
 from src.schemas.method_output_schemas import (
     DailyInfoResponse,
@@ -52,6 +53,7 @@ from src.schemas.method_output_schemas import (
     TaskInfoResponse,
     SentInvitationsResponse,
     SentInvitationInfo,
+    OrderInfoResponse,
 )
 
 bot_router = APIRouter(prefix="/bot", dependencies=[BOT_ACCESS_DEPENDENCY])
@@ -324,3 +326,21 @@ async def reject_invitation(user: USER_DEPENDENCY, invitation: RejectInvitationB
     await db.commit()
 
     return True
+
+
+@bot_router.post("/order/info", response_description="The information about the order")
+async def get_order_info(room: ROOM_DEPENDENCY, order: OrderInfoBody, db: DB_SESSION_DEPENDENCY) -> OrderInfoResponse:
+    order = await check_order_exists(order.id, room.id, db)
+    users = (
+        (
+            await db.execute(
+                select(TaskExecutor.user_id)
+                .where(TaskExecutor.order_id == order.id)
+                .order_by(TaskExecutor.order_number)
+            )
+        )
+        .unique()
+        .scalars()
+    )
+
+    return OrderInfoResponse(users=users)

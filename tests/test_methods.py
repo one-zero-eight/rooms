@@ -182,6 +182,12 @@ def test_reject_invitation_user_not_exist():
     assert r.json()["code"] == 102
 
 
+def test_get_order_info_user_not_exist():
+    r = post("/bot/order/info", {"user_id": 0})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 102
+
+
 #############################
 
 
@@ -255,6 +261,12 @@ def test_get_tasks_user_has_no_room():
 
 def test_get_task_info_user_has_no_room():
     r = post("/bot/task/info", {"user_id": 3})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 105
+
+
+def test_get_order_info_user_has_no_room():
+    r = post("/bot/order/info", {"user_id": 3})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 105
 
@@ -350,6 +362,15 @@ def test_create_task_order_not_exist():
     assert r.json()["code"] == 107
 
 
+def test_get_order_info_order_not_exist():
+    r = post(
+        "/bot/order/info",
+        {"user_id": 1, "order": {"id": 0}},
+    )
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 107
+
+
 def test_modify_task_task_not_exist():
     r = post(
         "/bot/task/modify",
@@ -397,6 +418,12 @@ def test_modify_task_not_yours_order():
 
 def test_get_task_info_not_yours_task():
     r = post("/bot/task/info", {"user_id": 4, "task": {"id": 1}})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 117
+
+
+def test_get_order_info_not_yours_order():
+    r = post("/bot/order/info", {"user_id": 4, "order": {"id": 1}})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 117
 
@@ -688,3 +715,8 @@ async def test_reject_invitation():
     assert r.status_code == 200 and r.json() is True
     async with sessionmaker.get_session() as db:
         assert await db.get(Invitation, 1) is None
+
+
+def test_get_order_info():
+    r = post("/bot/order/info", {"user_id": 1, "order": {"id": 1}})
+    assert r.status_code == 200 and r.json()["users"] == [2, 1]

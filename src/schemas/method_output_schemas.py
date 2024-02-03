@@ -55,3 +55,7 @@ class SentInvitationInfo(BaseModel):
 
 class SentInvitationsResponse(BaseModel):
     invitations: list[SentInvitationInfo]
+
+
+class OrderInfoResponse(BaseModel):
+    users: list[int]
