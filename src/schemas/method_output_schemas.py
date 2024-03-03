@@ -17,6 +17,7 @@ class IncomingInvitationInfo(BaseModel):
     id: int
     sender: int
     room: int
+    room_name: str
 
 
 class IncomingInvitationsResponse(BaseModel):
@@ -51,6 +52,7 @@ class SentInvitationInfo(BaseModel):
     id: int
     addressee: str
     room: int
+    room_name: str
 
 
 class SentInvitationsResponse(BaseModel):

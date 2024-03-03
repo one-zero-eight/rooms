@@ -238,7 +238,10 @@ async def get_incoming_invitations(
         if i.expiration_date <= datetime.now():
             await db.delete(i)
             continue
-        response.invitations.append(IncomingInvitationInfo(id=i.id, sender=i.sender_id, room=i.room_id))
+        room_name = (await db.get(Room, i.room_id)).name
+        response.invitations.append(
+            IncomingInvitationInfo(id=i.id, sender=i.sender_id, room=i.room_id, room_name=room_name)
+        )
 
     await db.commit()
     return response
@@ -297,7 +300,10 @@ async def get_sent_invitations(user: USER_DEPENDENCY, db: DB_SESSION_DEPENDENCY)
         if i.expiration_date <= datetime.now():
             await db.delete(i)
             continue
-        invitations.append(SentInvitationInfo(id=i.id, addressee=i.addressee_alias, room=i.room_id))
+        room_name = (await db.get(Room, i.room_id)).name
+        invitations.append(
+            SentInvitationInfo(id=i.id, addressee=i.addressee_alias, room=i.room_id, room_name=room_name)
+        )
 
     return SentInvitationsResponse(invitations=invitations)
 

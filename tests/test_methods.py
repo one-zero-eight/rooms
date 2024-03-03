@@ -632,8 +632,9 @@ def test_incoming_invitations():
     inv2 = post("/bot/invitation/create", {"user_id": 2, "addressee": {"alias": "alias3"}}).json()
     r = post("/bot/invitation/inbox", {"user_id": 3, "alias": "alias3"})
     assert r.status_code == 200 and (
-        {"id": 1, "sender": 1, "room": 1} in (invitations := r.json()["invitations"])
-        and {"id": inv2, "sender": 2, "room": 1} in invitations
+        len(invites := r.json()["invitations"]) == 2
+        and {"id": 1, "sender": 1, "room": 1, "room_name": "room1"} in invites
+        and {"id": inv2, "sender": 2, "room": 1, "room_name": "room1"} in invites
     )
 
 
@@ -696,8 +697,8 @@ def test_get_sent_invitations():
     r = post("/bot/invitation/sent", {"user_id": 1})
     assert r.status_code == 200 and (
         len(invites := r.json()["invitations"]) == 2
-        and {"id": 1, "addressee": "alias3", "room": 1} in invites
-        and {"id": 2, "addressee": "alias4", "room": 2} in invites
+        and {"id": 1, "addressee": "alias3", "room": 1, "room_name": "room1"} in invites
+        and {"id": 2, "addressee": "alias4", "room": 2, "room_name": "room2"} in invites
     )
 
 
