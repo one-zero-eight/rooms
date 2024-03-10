@@ -8,7 +8,7 @@ class CreateUserBody(BaseModel):
 
 
 class CreateRoomBody(BaseModel):
-    name: str
+    name: str = Field(max_length=250)
 
 
 class InvitePersonBody(BaseModel):
