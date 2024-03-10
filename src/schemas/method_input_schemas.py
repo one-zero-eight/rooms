@@ -50,7 +50,6 @@ class DeleteInvitationBody(BaseModel):
 
 class RejectInvitationBody(BaseModel):
     id: int
-    id: int
 
 
 class OrderInfoBody(BaseModel):
