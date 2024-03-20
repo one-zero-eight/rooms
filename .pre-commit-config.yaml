@@ -14,22 +14,17 @@ default_stages:
 repos:
   # Fix some errors with Ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.292
+    rev: v0.3.2
     hooks:
       - id: ruff
         args: [ --fix, --exit-zero, --show-fixes ]
         name: "ruff: fixing"
-
-  # Reformat Python files with Black
-  - repo: https://github.com/psf/black
-    rev: 23.9.1
-    hooks:
-      - id: black
-        name: "black: formatting"
+      - id: ruff-format
+        name: "ruff: formatting"
 
   # Lint Python files with Ruff
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.0.292
+    rev: v0.3.2
     hooks:
       - id: ruff
         name: "ruff: linting"

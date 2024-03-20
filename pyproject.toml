@@ -22,7 +22,7 @@ sqlmodel = "^0.0.14"
 asyncpg = "^0.29.0"
 
 [tool.poetry.group.dev.dependencies]
-ruff = "^0.0.277"
+ruff = "^0.3.2"
 black = "^23.3.0"
 pre-commit = "^3.3.3"
 pytest = "^7.4.3"
