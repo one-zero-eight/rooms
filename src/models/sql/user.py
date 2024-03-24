@@ -2,7 +2,7 @@ import typing
 from datetime import datetime
 from typing import Optional
 
-from sqlalchemy import ForeignKey, func
+from sqlalchemy import ForeignKey, func, BigInteger, Column
 from sqlmodel import SQLModel, Field, Relationship
 
 if typing.TYPE_CHECKING:
@@ -16,7 +16,7 @@ if typing.TYPE_CHECKING:
 class User(SQLModel, table=True):
     __tablename__ = "users"
 
-    id: int = Field(primary_key=True, sa_column_kwargs={"autoincrement": False})
+    id: int = Field(sa_column=Column(BigInteger(), primary_key=True, autoincrement=False))
     room_id: Optional[int] = Field(sa_column_args=(ForeignKey("rooms.id", onupdate="CASCADE", ondelete="SET NULL"),))
     register_datetime: Optional[datetime] = Field(sa_column_kwargs={"server_default": func.now()})
 
