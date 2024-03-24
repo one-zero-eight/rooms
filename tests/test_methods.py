@@ -248,7 +248,7 @@ def test_room_info_user_has_no_room():
 
 
 def test_leave_room_user_has_no_room():
-    r = post("/bot/room/info", {"user_id": 3})
+    r = post("/bot/room/leave", {"user_id": 3})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 105
 
