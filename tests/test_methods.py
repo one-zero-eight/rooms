@@ -640,7 +640,9 @@ def test_incoming_invitations():
 
 def test_room_info():
     r = post("/bot/room/info", {"user_id": 1})
-    assert r.status_code == 200 and ((info := r.json())["name"] == "room1" and set(info["users"]) == {1, 2})
+    assert r.status_code == 200 and (
+        (info := r.json())["name"] == "room1" and info["id"] == 1 and set(info["users"]) == {1, 2}
+    )
 
 
 @pytest.mark.asyncio

@@ -25,6 +25,7 @@ class IncomingInvitationsResponse(BaseModel):
 
 
 class RoomInfoResponse(BaseModel):
+    id: int
     name: str
     users: list[int]
 

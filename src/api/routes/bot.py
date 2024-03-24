@@ -250,7 +250,7 @@ async def get_incoming_invitations(
 @bot_router.post("/room/info", response_description="Info about the user's room")
 async def get_room_info(room: ROOM_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> RoomInfoResponse:
     users = [id_ for id_ in (await db.execute(select(User.id).where(User.room_id == room.id))).unique().scalars()]
-    return RoomInfoResponse(name=room.name, users=users)
+    return RoomInfoResponse(id=room.id, name=room.name, users=users)
 
 
 @bot_router.post("/room/leave", response_description="True if the operation was successful")
