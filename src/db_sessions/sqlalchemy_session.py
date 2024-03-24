@@ -19,12 +19,15 @@ class SqlAlchemySessionMaker:
 
 
 engine = create_async_engine(get_settings().DB_URL)
-sessionmaker = SqlAlchemySessionMaker(engine)
+session_maker = SqlAlchemySessionMaker(engine)
 
 
-async def get_session():
-    async with sessionmaker.get_session() as session:
+async def get_session_dependency() -> AsyncSession:
+    async with session_maker.get_session() as session:
         yield session
 
 
-DB_SESSION_DEPENDENCY = Annotated[AsyncSession, Depends(get_session)]
+DB_SESSION_DEPENDENCY = Annotated[AsyncSession, Depends(get_session_dependency)]
+
+
+__all__ = ["DB_SESSION_DEPENDENCY", "session_maker"]

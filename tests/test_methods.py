@@ -8,7 +8,7 @@ from sqlalchemy import delete, text, exists, select
 
 from src.api.auth.utils import create_jwt
 from src.config import get_settings
-from src.db_sessions.sqlalchemy_session import sessionmaker
+from src.db_sessions.sqlalchemy_session import session_maker
 from src.main import app
 from src.models.sql import User, Room, Task, Order, TaskExecutor, Invitation
 from src.schemas.method_output_schemas import TaskInfoResponse
@@ -23,19 +23,15 @@ def post(url: str, json: dict) -> Response:
 
 
 async def clear_db():
-    async with sessionmaker.get_session() as session:
-        await session.execute(delete(Invitation))
-        await session.execute(delete(TaskExecutor))
-        await session.execute(delete(Order))
-        await session.execute(delete(Task))
-        await session.execute(delete(Room))
-        await session.execute(delete(User))
-        await session.commit()
+    async with session_maker.get_session() as session:
+        for model in (Invitation, TaskExecutor, Order, Task, Room, User):
+            await session.execute(delete(model))
+            await session.commit()
 
 
 @pytest_asyncio.fixture(autouse=True)
 async def setup_data_in_db():
-    async with sessionmaker.get_session() as session:
+    async with session_maker.get_session() as session:
         # IMPORTANT: be careful with default autoincrement and fixed IDs
         # this file currently sets all ids from code
         # a test's ids start from 1000
@@ -273,7 +269,7 @@ def test_get_order_info_user_has_no_room():
 
 @pytest.mark.asyncio
 async def test_invite_too_many():
-    async with sessionmaker.get_session() as db:
+    async with session_maker.get_session() as db:
         db.add(Room(1001, "1001"))
         db.add(User(1001, 1001))
         for i in range(get_settings().MAX_INVITATIONS):
@@ -286,7 +282,7 @@ async def test_invite_too_many():
 
 @pytest.mark.asyncio
 async def test_create_order_too_many():
-    async with sessionmaker.get_session() as db:
+    async with session_maker.get_session() as db:
         db.add(Room(1001, "1001"))
         db.add(User(1001, 1001))
         for i in range(get_settings().MAX_ORDERS):
@@ -299,7 +295,7 @@ async def test_create_order_too_many():
 
 @pytest.mark.asyncio
 async def test_create_task_too_many():
-    async with sessionmaker.get_session() as db:
+    async with session_maker.get_session() as db:
         db.add(Room(1001, "1001"))
         db.add(User(1001, 1001))
         db.add(Order(1001, 1001))
@@ -443,7 +439,7 @@ def test_delete_invitation_not_yours_invitation():
 
 @pytest.mark.asyncio
 async def test_accept_invitation_expired():
-    async with sessionmaker.get_session() as db:
+    async with session_maker.get_session() as db:
         db.add(
             Invitation(1001, 1, "lol", 1, datetime.now() - timedelta(days=get_settings().INVITATION_LIFESPAN_DAYS + 1))
         )
@@ -468,7 +464,7 @@ def test_register():
 
 @pytest.mark.asyncio
 async def test_create_room():
-    async with sessionmaker.get_session() as db:
+    async with session_maker.get_session() as db:
         db.add(User(1001))
         await db.commit()
     r = post("/bot/room/create", {"user_id": 1001, "room": {"name": "1001"}})
@@ -477,7 +473,7 @@ async def test_create_room():
 
 @pytest.mark.asyncio
 async def test_invite():
-    async with sessionmaker.get_session() as db:
+    async with session_maker.get_session() as db:
         db.add(User(1001, 1001))
         db.add(Room(1001, "1001"))
         await db.commit()
@@ -487,7 +483,7 @@ async def test_invite():
 
 @pytest.mark.asyncio
 async def test_accept_invitation():
-    async with sessionmaker.get_session() as db:
+    async with session_maker.get_session() as db:
         db.add(User(1001, 1001))
         db.add(User(1002))
         db.add(Room(1001, "1001"))
@@ -499,7 +495,7 @@ async def test_accept_invitation():
 
 @pytest.mark.asyncio
 async def test_create_order():
-    async with sessionmaker.get_session() as db:
+    async with session_maker.get_session() as db:
         db.add(User(1001, 1001))
         db.add(User(1002, 1001))
         db.add(Room(1001, "1001"))
@@ -510,7 +506,7 @@ async def test_create_order():
 
 @pytest.mark.asyncio
 async def test_create_task():
-    async with sessionmaker.get_session() as db:
+    async with session_maker.get_session() as db:
         db.add(User(1001, 1001))
         db.add(User(1002, 1001))
         db.add(Room(1001, "1001"))
@@ -534,7 +530,7 @@ async def test_create_task():
 
 @pytest.mark.asyncio
 async def test_modify_task():
-    async with sessionmaker.get_session() as db:
+    async with session_maker.get_session() as db:
         db.add(User(1001, 1001))
         db.add(Room(1001, "1001"))
         db.add(Order(1001, 1001))
@@ -649,7 +645,7 @@ def test_room_info():
 async def test_leave_room():
     r = post("/bot/room/leave", {"user_id": 1})
     assert r.status_code == 200 and r.json() is True
-    async with sessionmaker.get_session() as db:
+    async with session_maker.get_session() as db:
         assert (await db.get(User, 1)).room_id is None and (
             await db.execute(select(exists(Room)).where(Room.id == 2))
         ).scalar()
@@ -659,7 +655,7 @@ async def test_leave_room():
 async def test_leave_room_delete_room():
     r = post("/bot/room/leave", {"user_id": 4})
     assert r.status_code == 200 and r.json() is True
-    async with sessionmaker.get_session() as db:
+    async with session_maker.get_session() as db:
         assert (await db.get(User, 4)).room_id is None and not (
             await db.execute(select(exists(Room)).where(Room.id == 2))
         ).scalar()
@@ -708,7 +704,7 @@ def test_get_sent_invitations():
 async def test_delete_invitation():
     r = post("/bot/invitation/delete", {"user_id": 1, "invitation": {"id": 1}})
     assert r.status_code == 200 and r.json() is True
-    async with sessionmaker.get_session() as db:
+    async with session_maker.get_session() as db:
         assert await db.get(Invitation, 1) is None
 
 
@@ -716,7 +712,7 @@ async def test_delete_invitation():
 async def test_reject_invitation():
     r = post("/bot/invitation/reject", {"user_id": 3, "invitation": {"id": 1}})
     assert r.status_code == 200 and r.json() is True
-    async with sessionmaker.get_session() as db:
+    async with session_maker.get_session() as db:
         assert await db.get(Invitation, 1) is None
 
 
