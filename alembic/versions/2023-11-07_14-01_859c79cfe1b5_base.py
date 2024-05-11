@@ -1,4 +1,4 @@
-"""empty message
+"""start revision
 
 Revision ID: 859c79cfe1b5
 Revises:
