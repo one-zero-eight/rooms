@@ -9,39 +9,34 @@
 2. Install Poetry
 
 3. Install dependencies
-
-```bash
-poetry install
-```
+    ```bash
+    poetry install
+    ```
 
 4. Set up pre-commit hook
+    ```bash
+    poetry run pre-commit install
+    ```
 
-```bash
-poetry run pre-commit install
-```
-
-5. Set up settings file
-
-```bash
-cp example.env .env
-```
+5. Set up settings file.
+    ```bash
+    cp example.env .env
+    ```
 
 6. Create postgres database
-
-```bash
-psql -c 'CREATE DATABASE rooms_api_108_test;'
-```
+    ```bash
+    psql -c 'CREATE DATABASE rooms_api_108_test;'
+    ```
 
 7. Upgrade database schemas
-
-```bash
-poetry run alembic upgrade head
-```
+    ```bash
+    poetry run alembic upgrade head
+    ```
 
 ### Run
 
 ```bash
-poetry run uvicorn src.main:app --reload
+poetry run fastapi dev src/main.py
 ```
 
 ## Via Docker
@@ -51,7 +46,7 @@ Check the `DB_URL` setting in `.env` file.
 docker build . -t innohassle-rooms-api
 ```
 ```bash
-docker run --rm -ti -d -p 80:80 innohassle-rooms-api
+docker run --rm -ti -d -p 80:80 --env-file .env innohassle-rooms-api
 ```
 
 ## Usage
