@@ -17,9 +17,9 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Read settings
-from src.config import Settings  # noqa: E402
+from src.config import get_settings  # noqa: E402
 
-settings = Settings()
+settings = get_settings()
 config.set_main_option("sqlalchemy.url", settings.DB_URL)
 
 # add your model's MetaData object here

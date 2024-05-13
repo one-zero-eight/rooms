@@ -1,6 +1,7 @@
 from functools import lru_cache
 from typing import Annotated
 
+import dotenv
 from fastapi import Depends
 from pydantic_settings import BaseSettings
 
@@ -20,6 +21,8 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings():
+    if dotenv.find_dotenv():
+        dotenv.load_dotenv()
     return Settings()
 
 
