@@ -44,7 +44,7 @@ repos:
         stages:
           - pre-commit
           - pre-push
-        entry: env DOTENV_PATH="example.env" sh -c "alembic downgrade base && alembic upgrade head && pytest -v"
+        entry: bash -c 'set -a && source .env && set +a && alembic downgrade base && alembic upgrade head && pytest -v'
         language: system
         pass_filenames: false
         always_run: true

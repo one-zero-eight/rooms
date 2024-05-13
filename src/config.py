@@ -1,9 +1,8 @@
-import os
 from functools import lru_cache
 from typing import Annotated
 
 from fastapi import Depends
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
@@ -15,10 +14,8 @@ class Settings(BaseSettings):
     MAX_TASKS: int
     INVITATION_LIFESPAN_DAYS: int
 
-    model_config = SettingsConfigDict(env_file=".env")
-
     def __init__(self):
-        super().__init__(_env_file=os.getenv("DOTENV_PATH", ".env"))
+        super().__init__(_env_file=None)
 
 
 @lru_cache

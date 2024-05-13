@@ -54,7 +54,13 @@ FROM python-base as production
 COPY --from=builder-base $PYSETUP_PATH $PYSETUP_PATH
 
 WORKDIR $PYSETUP_PATH
-COPY . ./
+COPY ./src ./src
+COPY ./scripts ./scripts
+COPY example.env ./
 EXPOSE 80
+
+RUN addgroup --system nonroot \
+    && adduser --system nonroot --ingroup nonroot
+USER nonroot
 
 CMD uvicorn src.main:app --host 0.0.0.0 --port 80
