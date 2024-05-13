@@ -73,9 +73,11 @@ jobs:
     #----------------------------------------------
     - name: Test with pytest
       shell: bash
+      env:
+        ENV_FILE: example.env
       run: |
         source .venv/bin/activate
-        set -a && source .env && set +a
+        set -a && source $ENV_FILE && set +a
         alembic upgrade head
         pytest tests/ -vv --color=yes
     # only second test works without SERIAL sequence synchronization errors (why ???)
