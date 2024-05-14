@@ -427,7 +427,7 @@ def test_get_order_info_not_yours_order():
 def test_delete_invitation_not_yours_invitation():
     r = post("/bot/invitation/delete", {"user_id": 4, "invitation": {"id": 1}})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
-    assert r.json()["code"] == 112
+    assert r.json()["code"] == 119
 
 
 # temporary commented (until issue #15)

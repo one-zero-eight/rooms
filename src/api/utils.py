@@ -11,9 +11,9 @@ from src.api.exceptions import (
     RoomExistsException,
     UserNotExistException,
     UserExistsException,
-    WrongRoomException,
+    RoomOwningException,
     InvitationNotExistException,
-    NotYoursInvitationException,
+    UserOwningException,
 )
 from src.db_sessions import DB_SESSION_DEPENDENCY
 from src.models.sql import User, Room, Order, Task, Invitation
@@ -64,7 +64,7 @@ async def check_order_exists(order_id: int, room_id: int, db: AsyncSession) -> O
     if (order := await db.get(Order, order_id)) is None:
         raise OrderNotExistException()
     if order.room_id != room_id:
-        raise WrongRoomException("order")
+        raise RoomOwningException("order")
     # noinspection PyTypeChecker
     return order
 
@@ -73,7 +73,7 @@ async def check_task_exists(task_id: int, room_id: int, db: AsyncSession) -> Tas
     if (task := await db.get(Task, task_id)) is None:
         raise TaskNotExistException()
     if task.room_id != room_id:
-        raise WrongRoomException("task")
+        raise RoomOwningException("task")
     # noinspection PyTypeChecker
     return task
 
@@ -82,6 +82,6 @@ async def check_invitation_exists(invitation_id: int, sender_id: int, db: AsyncS
     if (invitation := await db.get(Invitation, invitation_id)) is None:
         raise InvitationNotExistException()
     if invitation.sender_id != sender_id:
-        raise NotYoursInvitationException()
+        raise UserOwningException("invitation")
     # noinspection PyTypeChecker
     return invitation
