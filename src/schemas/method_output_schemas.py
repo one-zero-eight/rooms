@@ -15,7 +15,7 @@ class DailyInfoResponse(BaseModel):
 
 class IncomingInvitationInfo(BaseModel):
     id: int
-    sender: int
+    sender_alias: str | None
     room: int
     room_name: str
 

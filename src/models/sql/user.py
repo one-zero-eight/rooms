@@ -16,7 +16,9 @@ if typing.TYPE_CHECKING:
 class User(SQLModel, table=True):
     __tablename__ = "users"
 
+    # User's telegram id
     id: int = Field(sa_column=Column(BigInteger(), primary_key=True, autoincrement=False))
+    alias: str | None = Field(max_length=255, nullable=True, default=None, index=True)
     room_id: Optional[int] = Field(sa_column_args=(ForeignKey("rooms.id", onupdate="CASCADE", ondelete="SET NULL"),))
     register_datetime: Optional[datetime] = Field(sa_column_kwargs={"server_default": func.now()})
 
@@ -31,9 +33,10 @@ class User(SQLModel, table=True):
         self,
         id_: int = None,
         room_id: int = None,
+        alias: str = None,
         register_datetime: datetime = None,
     ):
-        super().__init__(id=id_, room_id=room_id, register_datetime=register_datetime)
+        super().__init__(id=id_, room_id=room_id, alias=alias, register_datetime=register_datetime)
 
     def __repr__(self):
         return f"User(id={self.id}, room_id={self.room_id}, " f"register_datetime={repr(self.register_datetime)})"

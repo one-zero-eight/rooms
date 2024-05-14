@@ -16,7 +16,7 @@ class Invitation(SQLModel, table=True):
 
     id: int = Field(primary_key=True)
     sender_id: int = Field(sa_column_args=(ForeignKey("users.id", onupdate="CASCADE", ondelete="CASCADE"),))
-    addressee_alias: str = Field(max_length=64)
+    addressee_alias: str = Field(max_length=64, index=True)
     room_id: int = Field(sa_column_args=(ForeignKey("rooms.id", onupdate="CASCADE", ondelete="CASCADE"),))
     expiration_date: datetime = Field(
         default_factory=lambda: datetime.now() + timedelta(days=get_settings().INVITATION_LIFESPAN_DAYS)

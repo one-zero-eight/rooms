@@ -1,8 +1,8 @@
 from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Depends
-from sqlalchemy import select, exists, delete
+from fastapi import APIRouter, Body
+from sqlalchemy import select, exists, delete, update
 from sqlalchemy.sql.functions import count
 
 from src.api.auth.utils import BOT_ACCESS_DEPENDENCY
@@ -16,6 +16,7 @@ from src.api.exceptions import (
     TooManyTasksException,
     SpecifiedUserNotExistException,
     InvitationExpiredException,
+    NotYoursInvitationException,
 )
 from src.api.utils import (
     check_user_not_exists,
@@ -23,7 +24,6 @@ from src.api.utils import (
     ROOM_DEPENDENCY,
     check_order_exists,
     check_task_exists,
-    user_dependency,
     check_invitation_exists,
 )
 from src.config import SETTINGS_DEPENDENCY
@@ -125,9 +125,9 @@ async def accept_invitation(user: USER_DEPENDENCY, invitation: AcceptInvitationB
         await db.delete(invitation)
         await db.commit()
         raise InvitationExpiredException()
-    # temporary commented (until issue #15)
-    # if invitation.addressee_alias != user.id:
-    #     raise NotYoursInvitationException()
+
+    if invitation.addressee_alias != user.alias:
+        raise NotYoursInvitationException()
 
     user.room_id = invitation.room_id
     await db.delete(invitation)
@@ -224,23 +224,22 @@ async def get_daily_info(room: ROOM_DEPENDENCY) -> DailyInfoResponse:
     return response
 
 
-@bot_router.post(
-    "/invitation/inbox",
-    dependencies=[Depends(user_dependency)],
-    response_description="A list of the invitations addressed to a user",
-)
-async def get_incoming_invitations(
-    alias: Annotated[str, Body(max_length=64)], db: DB_SESSION_DEPENDENCY
-) -> IncomingInvitationsResponse:
+@bot_router.post("/invitation/inbox", response_description="A list of the invitations addressed to a user")
+async def get_incoming_invitations(user: USER_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> IncomingInvitationsResponse:
     response = IncomingInvitationsResponse(invitations=[])
+    if user.alias is None:
+        return response
+
     i: Invitation
-    for i in (await db.execute(select(Invitation).where(Invitation.addressee_alias == alias))).unique().scalars():
+    for i in (await db.execute(select(Invitation).where(Invitation.addressee_alias == user.alias))).unique().scalars():
         if i.expiration_date <= datetime.now():
             await db.delete(i)
             continue
         room_name = (await db.get(Room, i.room_id)).name
         response.invitations.append(
-            IncomingInvitationInfo(id=i.id, sender=i.sender_id, room=i.room_id, room_name=room_name)
+            IncomingInvitationInfo(
+                id=i.id, sender_alias=(await db.get(User, i.sender_id)).alias, room=i.room_id, room_name=room_name
+            )
         )
 
     await db.commit()
@@ -317,16 +316,14 @@ async def delete_invitation(user: USER_DEPENDENCY, invitation: DeleteInvitationB
     return True
 
 
-# temporary (until issue #15)
-# noinspection PyUnusedLocal
 @bot_router.post("/invitation/reject", response_description="True if the invitation was rejected")
 async def reject_invitation(user: USER_DEPENDENCY, invitation: RejectInvitationBody, db: DB_SESSION_DEPENDENCY) -> bool:
     invitation = await db.get(Invitation, invitation.id)
     if invitation is None:
         raise InvitationNotExistException()
-    # temporary commented (until issue #15)
-    # if invitation.addressee_alias != user.id:
-    #     raise NotYoursInvitationException()
+
+    if invitation.addressee_alias != user.alias:
+        raise NotYoursInvitationException()
 
     await db.delete(invitation)
     await db.commit()
@@ -350,3 +347,11 @@ async def get_order_info(room: ROOM_DEPENDENCY, order: OrderInfoBody, db: DB_SES
     )
 
     return OrderInfoResponse(users=users)
+
+
+@bot_router.post("/user/save_alias", response_description="True if the alias was saved")
+async def save_user_alias(user: USER_DEPENDENCY, alias: Annotated[str, Body()], db: DB_SESSION_DEPENDENCY) -> bool:
+    user.alias = alias
+    await db.execute(update(Invitation).where(Invitation.addressee_alias == user.alias).values(addressee_alias=alias))
+    await db.commit()
+    return True

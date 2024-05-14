@@ -35,9 +35,9 @@ async def setup_data_in_db():
         # IMPORTANT: be careful with default autoincrement and fixed IDs
         # this file currently sets all ids from code
         # a test's ids start from 1000
-        session.add(User(1, 1))
+        session.add(User(1, 1, "alias1"))
         session.add(User(2, 1))
-        session.add(User(3))
+        session.add(User(3, alias="alias3"))
         session.add(User(4, 2))
         session.add(User(5))
         session.add(Room(1, "room1"))
@@ -131,7 +131,7 @@ def test_daily_info_user_not_exist():
 
 
 def test_incoming_invitations_user_not_exist():
-    r = post("/bot/invitation/inbox", {"user_id": 0, "alias": "a"})
+    r = post("/bot/invitation/inbox", {"user_id": 0})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 102
 
@@ -180,6 +180,12 @@ def test_reject_invitation_user_not_exist():
 
 def test_get_order_info_user_not_exist():
     r = post("/bot/order/info", {"user_id": 0})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 102
+
+
+def test_save_alias_user_not_exist():
+    r = post("/bot/user/save_alias", {"user_id": 0})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 102
 
@@ -334,10 +340,10 @@ def test_reject_invitation_not_exist():
     assert r.json()["code"] == 111
 
 
-# def test_accept_invitation_not_yours():
-#     r = post("/bot/invitation/accept", {"user_id": 5, "invitation": {"id": 1}})
-#     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
-#     assert r.json()["code"] == 112
+def test_accept_invitation_not_yours():
+    r = post("/bot/invitation/accept", {"user_id": 5, "invitation": {"id": 1}})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 112
 
 
 def test_create_order_user_in_order_not_exist():
@@ -430,11 +436,10 @@ def test_delete_invitation_not_yours_invitation():
     assert r.json()["code"] == 119
 
 
-# temporary commented (until issue #15)
-# def test_reject_invitation_not_yours_invitation():
-#     r = post("/bot/invitation/reject", {"user_id": 2, "invitation": {"id": 1}})
-#     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
-#     assert r.json()["code"] == 112
+def test_reject_invitation_not_yours_invitation():
+    r = post("/bot/invitation/reject", {"user_id": 2, "invitation": {"id": 1}})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 112
 
 
 @pytest.mark.asyncio
@@ -485,7 +490,7 @@ async def test_invite():
 async def test_accept_invitation():
     async with session_maker.get_session() as db:
         db.add(User(1001, 1001))
-        db.add(User(1002))
+        db.add(User(1002, alias="alias1002"))
         db.add(Room(1001, "1001"))
         db.add(Invitation(1001, 1001, "alias1002", 1001))
         await db.commit()
@@ -537,28 +542,39 @@ async def test_modify_task():
         db.add(TaskExecutor(1001, 1001, 1))
         db.add(Task(1001, "1001", "", 1001, datetime.now(), 1, 1001))
         await db.commit()
-    r = post(
-        "/bot/task/modify",
-        {
-            "user_id": 1001,
-            "task": {
-                "id": 1001,
-                "name": "task1001",
-                "description": "foo bar",
-                "start_date": datetime.now().isoformat(),
-                "period": 7,
-                "order_id": 1001,
+
+        r = post(
+            "/bot/task/modify",
+            {
+                "user_id": 1001,
+                "task": {
+                    "id": 1001,
+                    "name": "task1001",
+                    "description": "foo bar",
+                    "start_date": (start_date := datetime.now().isoformat()),
+                    "period": 7,
+                    "order_id": 1001,
+                },
             },
-        },
-    )
-    assert r.status_code == 200 and r.json() is True
+        )
+        assert r.status_code == 200 and r.json() is True
+
+        task: Task = await db.get(Task, 1001)
+        assert (
+            task.name == "task1001"
+            and task.description == "foo bar"
+            and task.start_date == datetime.fromisoformat(start_date)
+            and task.period == 7
+            and task.order_id == 1001
+        )
 
 
 def setup_some_tasks():
     post("/bot/user/create", {"user_id": 1001})
     post("/bot/user/create", {"user_id": 1002})
+    post("/bot/user/save_alias", {"user_id": 1002, "alias": "alias1002"})
     post("/bot/room/create", {"user_id": 1001, "room": {"name": "1001"}})
-    invitation = post("/bot/invitation/create", {"user_id": 1001, "addressee": {"alias": "daily_alias"}}).json()
+    invitation = post("/bot/invitation/create", {"user_id": 1001, "addressee": {"alias": "alias1002"}}).json()
     post("/bot/invitation/accept", {"user_id": 1002, "invitation": {"id": invitation}})
     order_id = post("/bot/order/create", {"user_id": 1001, "order": {"users": [1001, 1002]}}).json()
     task1 = post(
@@ -626,12 +642,15 @@ def test_daily_info():
 
 def test_incoming_invitations():
     inv2 = post("/bot/invitation/create", {"user_id": 2, "addressee": {"alias": "alias3"}}).json()
-    r = post("/bot/invitation/inbox", {"user_id": 3, "alias": "alias3"})
+    r = post("/bot/invitation/inbox", {"user_id": 3})
     assert r.status_code == 200 and (
         len(invites := r.json()["invitations"]) == 2
-        and {"id": 1, "sender": 1, "room": 1, "room_name": "room1"} in invites
-        and {"id": inv2, "sender": 2, "room": 1, "room_name": "room1"} in invites
+        and {"id": 1, "sender_alias": "alias1", "room": 1, "room_name": "room1"} in invites
+        and {"id": inv2, "sender_alias": None, "room": 1, "room_name": "room1"} in invites
     )
+
+    r = post("/bot/invitation/inbox", {"user_id": 2})
+    assert r.status_code == 200 and (len(r.json()["invitations"]) == 0)
 
 
 def test_room_info():
@@ -719,3 +738,11 @@ async def test_reject_invitation():
 def test_get_order_info():
     r = post("/bot/order/info", {"user_id": 1, "order": {"id": 1}})
     assert r.status_code == 200 and r.json()["users"] == [2, 1]
+
+
+@pytest.mark.asyncio
+async def test_save_alias():
+    r = post("/bot/user/save_alias", {"user_id": 2, "alias": "alias2"})
+    assert r.status_code == 200 and r.json()
+    async with session_maker.get_session() as db:
+        assert (await db.get(User, 2)).alias == "alias2"
