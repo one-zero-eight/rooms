@@ -1,3 +1,6 @@
+import os
+import time
+
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.openapi.utils import get_openapi
@@ -34,6 +37,10 @@ def custom_openapi():
 
 
 app.openapi = custom_openapi
+
+
+os.environ["TZ"] = "Europe/Moscow"
+time.tzset()
 
 
 if __name__ == "__main__":
