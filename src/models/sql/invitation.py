@@ -1,7 +1,7 @@
 import typing
 from datetime import datetime, timedelta
 
-from sqlalchemy import ForeignKey
+from sqlalchemy import ForeignKey, BigInteger, Column
 from sqlmodel import SQLModel, Field, Relationship
 
 from src.config import get_settings
@@ -15,7 +15,9 @@ class Invitation(SQLModel, table=True):
     __tablename__ = "invitations"
 
     id: int = Field(primary_key=True)
-    sender_id: int = Field(sa_column_args=(ForeignKey("users.id", onupdate="CASCADE", ondelete="CASCADE"),))
+    sender_id: int = Field(
+        sa_column=Column(BigInteger(), ForeignKey("users.id", onupdate="CASCADE", ondelete="CASCADE"))
+    )
     addressee_alias: str = Field(max_length=64, index=True)
     room_id: int = Field(sa_column_args=(ForeignKey("rooms.id", onupdate="CASCADE", ondelete="CASCADE"),))
     expiration_date: datetime = Field(

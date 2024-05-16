@@ -1,6 +1,6 @@
 import typing
 
-from sqlalchemy import UniqueConstraint, ForeignKey
+from sqlalchemy import UniqueConstraint, ForeignKey, Column, BigInteger
 from sqlmodel import SQLModel, Field, Relationship
 
 if typing.TYPE_CHECKING:
@@ -13,12 +13,15 @@ class TaskExecutor(SQLModel, table=True):
     __table_args__ = (UniqueConstraint("order_id", "order_number"),)
 
     user_id: int = Field(
-        sa_column_args=(ForeignKey("users.id", onupdate="cascade", ondelete="cascade"),),
-        primary_key=True,
-        sa_column_kwargs={"autoincrement": False},
+        sa_column=Column(
+            BigInteger(),
+            ForeignKey("users.id", onupdate="CASCADE", ondelete="CASCADE"),
+            autoincrement=False,
+            primary_key=True,
+        )
     )
     order_id: int = Field(
-        sa_column_args=(ForeignKey("orders.id", onupdate="cascade", ondelete="cascade"),),
+        sa_column_args=(ForeignKey("orders.id", onupdate="CASCADE", ondelete="CASCADE"),),
         primary_key=True,
         sa_column_kwargs={"autoincrement": False},
     )
