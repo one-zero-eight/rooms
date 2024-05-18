@@ -13,9 +13,14 @@ class DailyInfoResponse(BaseModel):
     tasks: list[TaskDailyInfo]
 
 
+class UserInfo(BaseModel):
+    alias: str | None
+    fullname: str | None
+
+
 class IncomingInvitationInfo(BaseModel):
     id: int
-    sender_alias: str | None
+    sender: UserInfo
     room: int
     room_name: str
 
@@ -27,7 +32,7 @@ class IncomingInvitationsResponse(BaseModel):
 class RoomInfoResponse(BaseModel):
     id: int
     name: str
-    users: list[int]
+    users: list[UserInfo]
 
 
 class Task(BaseModel):

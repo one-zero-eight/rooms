@@ -35,8 +35,8 @@ async def setup_data_in_db():
         # IMPORTANT: be careful with default autoincrement and fixed IDs
         # this file currently sets all ids from code
         # a test's ids start from 1000
-        session.add(User(1, 1, "alias1"))
-        session.add(User(2, 1))
+        session.add(User(1, 1, "alias1", "name1"))
+        session.add(User(2, 1, None, "full name2"))
         session.add(User(3, alias="alias3"))
         session.add(User(4, 2))
         session.add(User(5))
@@ -186,6 +186,12 @@ def test_get_order_info_user_not_exist():
 
 def test_save_alias_user_not_exist():
     r = post("/bot/user/save_alias", {"user_id": 0})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 102
+
+
+def test_save_fullname_user_not_exist():
+    r = post("/bot/user/save_fullname", {"user_id": 0})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 102
 
@@ -645,8 +651,9 @@ def test_incoming_invitations():
     r = post("/bot/invitation/inbox", {"user_id": 3})
     assert r.status_code == 200 and (
         len(invites := r.json()["invitations"]) == 2
-        and {"id": 1, "sender_alias": "alias1", "room": 1, "room_name": "room1"} in invites
-        and {"id": inv2, "sender_alias": None, "room": 1, "room_name": "room1"} in invites
+        and {"id": 1, "sender": {"alias": "alias1", "fullname": "name1"}, "room": 1, "room_name": "room1"} in invites
+        and {"id": inv2, "sender": {"alias": None, "fullname": "full name2"}, "room": 1, "room_name": "room1"}
+        in invites
     )
 
     r = post("/bot/invitation/inbox", {"user_id": 2})
@@ -656,7 +663,13 @@ def test_incoming_invitations():
 def test_room_info():
     r = post("/bot/room/info", {"user_id": 1})
     assert r.status_code == 200 and (
-        (info := r.json())["name"] == "room1" and info["id"] == 1 and set(info["users"]) == {1, 2}
+        (info := r.json())["name"] == "room1"
+        and info["id"] == 1
+        and (
+            len(users := list(info["users"])) == 2
+            and {"fullname": "name1", "alias": "alias1"} in users
+            and {"fullname": "full name2", "alias": None} in users
+        )
     )
 
 
@@ -742,7 +755,17 @@ def test_get_order_info():
 
 @pytest.mark.asyncio
 async def test_save_alias():
-    r = post("/bot/user/save_alias", {"user_id": 2, "alias": "alias2"})
+    r1 = post("/bot/user/save_alias", {"user_id": 1, "alias": None})
+    r2 = post("/bot/user/save_alias", {"user_id": 2, "alias": "alias2"})
+    assert 200 == r1.status_code == r2.status_code and r1.json() and r2.json()
+    async with session_maker.get_session() as db:
+        assert (await db.get(User, 1)).alias is None
+        assert (await db.get(User, 2)).alias == "alias2"
+
+
+@pytest.mark.asyncio
+async def test_save_fullname():
+    r = post("/bot/user/save_fullname", {"user_id": 1, "fullname": "fullname1"})
     assert r.status_code == 200 and r.json()
     async with session_maker.get_session() as db:
-        assert (await db.get(User, 2)).alias == "alias2"
+        assert (await db.get(User, 1)).fullname == "fullname1"

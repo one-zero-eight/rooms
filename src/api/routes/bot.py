@@ -54,6 +54,7 @@ from src.schemas.method_output_schemas import (
     SentInvitationsResponse,
     SentInvitationInfo,
     OrderInfoResponse,
+    UserInfo,
 )
 
 bot_router = APIRouter(prefix="/bot", dependencies=[BOT_ACCESS_DEPENDENCY])
@@ -235,10 +236,14 @@ async def get_incoming_invitations(user: USER_DEPENDENCY, db: DB_SESSION_DEPENDE
         if i.expiration_date <= datetime.now():
             await db.delete(i)
             continue
-        room_name = (await db.get(Room, i.room_id)).name
+        room_name = (await db.get_one(Room, i.room_id)).name
+        sender: User = await db.get_one(User, i.sender_id)
         response.invitations.append(
             IncomingInvitationInfo(
-                id=i.id, sender_alias=(await db.get(User, i.sender_id)).alias, room=i.room_id, room_name=room_name
+                id=i.id,
+                sender=UserInfo(alias=sender.alias, fullname=sender.fullname),
+                room=i.room_id,
+                room_name=room_name,
             )
         )
 
@@ -248,8 +253,11 @@ async def get_incoming_invitations(user: USER_DEPENDENCY, db: DB_SESSION_DEPENDE
 
 @bot_router.post("/room/info", response_description="Info about the user's room")
 async def get_room_info(room: ROOM_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> RoomInfoResponse:
-    users = [id_ for id_ in (await db.execute(select(User.id).where(User.room_id == room.id))).unique().scalars()]
-    return RoomInfoResponse(id=room.id, name=room.name, users=users)
+    user_ids = [id_ for id_ in (await db.execute(select(User.id).where(User.room_id == room.id))).unique().scalars()]
+    users = [await db.get_one(User, id_) for id_ in user_ids]
+    return RoomInfoResponse(
+        id=room.id, name=room.name, users=[UserInfo(alias=user.alias, fullname=user.fullname) for user in users]
+    )
 
 
 @bot_router.post("/room/leave", response_description="True if the operation was successful")
@@ -299,7 +307,7 @@ async def get_sent_invitations(user: USER_DEPENDENCY, db: DB_SESSION_DEPENDENCY)
         if i.expiration_date <= datetime.now():
             await db.delete(i)
             continue
-        room_name = (await db.get(Room, i.room_id)).name
+        room_name = (await db.get_one(Room, i.room_id)).name
         invitations.append(
             SentInvitationInfo(id=i.id, addressee=i.addressee_alias, room=i.room_id, room_name=room_name)
         )
@@ -350,8 +358,19 @@ async def get_order_info(room: ROOM_DEPENDENCY, order: OrderInfoBody, db: DB_SES
 
 
 @bot_router.post("/user/save_alias", response_description="True if the alias was saved")
-async def save_user_alias(user: USER_DEPENDENCY, alias: Annotated[str, Body()], db: DB_SESSION_DEPENDENCY) -> bool:
+async def save_user_alias(
+    user: USER_DEPENDENCY, db: DB_SESSION_DEPENDENCY, alias: Annotated[str | None, Body()] = None
+) -> bool:
     user.alias = alias
     await db.execute(update(Invitation).where(Invitation.addressee_alias == user.alias).values(addressee_alias=alias))
+    await db.commit()
+    return True
+
+
+@bot_router.post("/user/save_fullname", response_description="True if the fullname was saved")
+async def save_user_fullname(
+    user: USER_DEPENDENCY, fullname: Annotated[str, Body()], db: DB_SESSION_DEPENDENCY
+) -> bool:
+    user.fullname = fullname
     await db.commit()
     return True
