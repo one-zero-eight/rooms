@@ -262,12 +262,12 @@ async def get_room_info(room: ROOM_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> Roo
 
 @bot_router.post("/room/leave", response_description="True if the operation was successful")
 async def leave_room(user: USER_DEPENDENCY, room: ROOM_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> bool:
-    room_users = (await db.execute(select(count()).where(User.room_id == room.id))).scalar()
+    roommates_count = (await db.execute(select(count()).where(User.room_id == room.id))).scalar()
     user.room_id = None
-    await db.commit()
-    if room_users == 1:
+    await db.execute(delete(Invitation).where(Invitation.sender_id == user.id))
+    if roommates_count == 1:
         # await db.delete(room)
-        # does not work for some reason causing UPDATE invitations SET NULL
+        # does not work for some reason causing UPDATE invitations SET NULL instead of just cascade deletion
         await db.execute(delete(Room).where(Room.id == room.id))
     await db.commit()
     return True
