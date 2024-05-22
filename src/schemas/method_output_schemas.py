@@ -3,19 +3,19 @@ from datetime import datetime
 from pydantic import BaseModel
 
 
+class UserInfo(BaseModel):
+    alias: str | None
+    fullname: str | None
+
+
 class TaskDailyInfo(BaseModel):
     id: int
     name: str
-    today_user_id: int | None
+    today_executor: UserInfo | None
 
 
 class DailyInfoResponse(BaseModel):
     tasks: list[TaskDailyInfo]
-
-
-class UserInfo(BaseModel):
-    alias: str | None
-    fullname: str | None
 
 
 class IncomingInvitationInfo(BaseModel):
@@ -66,4 +66,4 @@ class SentInvitationsResponse(BaseModel):
 
 
 class OrderInfoResponse(BaseModel):
-    users: list[int]
+    users: list[UserInfo]

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Sequence
 
 from fastapi import APIRouter, Body
 from sqlalchemy import select, exists, delete, update
@@ -202,7 +202,7 @@ async def modify_task(room: ROOM_DEPENDENCY, task: ModifyTaskBody, db: DB_SESSIO
 
 
 @bot_router.post("/room/daily_info", response_description="Statuses of the tasks of the room")
-async def get_daily_info(room: ROOM_DEPENDENCY) -> DailyInfoResponse:
+async def get_daily_info(room: ROOM_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> DailyInfoResponse:
     response = DailyInfoResponse(tasks=[])
     task: Task
     for task in room.tasks:
@@ -212,15 +212,18 @@ async def get_daily_info(room: ROOM_DEPENDENCY) -> DailyInfoResponse:
         executors = task.order.executors
         i = (datetime.now() - task.start_date).days % len(executors)
 
-        todays_executor: TaskExecutor
+        today_executor: TaskExecutor
         executor: TaskExecutor
         for executor in executors:
             if executor.order_number == i:
-                todays_executor = executor
+                today_executor = executor
                 break
+        else:
+            raise RuntimeError(f"Order number {i} is not found for task_id = {task.id}")
 
-        # noinspection PyUnboundLocalVariable
-        response.tasks.append(TaskDailyInfo(id=task.id, name=task.name, today_user_id=todays_executor.user_id))
+        executor_as_user: User = await db.get_one(User, today_executor.user_id)
+        executor_info = UserInfo(alias=executor_as_user.alias, fullname=executor_as_user.fullname)
+        response.tasks.append(TaskDailyInfo(id=task.id, name=task.name, today_executor=executor_info))
 
     return response
 
@@ -342,19 +345,22 @@ async def reject_invitation(user: USER_DEPENDENCY, invitation: RejectInvitationB
 @bot_router.post("/order/info", response_description="The information about the order")
 async def get_order_info(room: ROOM_DEPENDENCY, order: OrderInfoBody, db: DB_SESSION_DEPENDENCY) -> OrderInfoResponse:
     order = await check_order_exists(order.id, room.id, db)
-    users = (
+
+    users: Sequence[User] = (
         (
             await db.execute(
-                select(TaskExecutor.user_id)
-                .where(TaskExecutor.order_id == order.id)
+                select(User)
+                .select_from(TaskExecutor)
+                .join(User)
                 .order_by(TaskExecutor.order_number)
+                .where(TaskExecutor.order_id == order.id)
             )
         )
         .unique()
         .scalars()
     )
 
-    return OrderInfoResponse(users=users)
+    return OrderInfoResponse(users=[UserInfo(alias=u.alias, fullname=u.fullname) for u in users])
 
 
 @bot_router.post("/user/save_alias", response_description="True if the alias was saved")

@@ -578,6 +578,7 @@ async def test_modify_task():
 def setup_some_tasks():
     post("/bot/user/create", {"user_id": 1001})
     post("/bot/user/create", {"user_id": 1002})
+    post("/bot/user/save_fullname", {"user_id": 1001, "fullname": "fullname1001"})
     post("/bot/user/save_alias", {"user_id": 1002, "alias": "alias1002"})
     post("/bot/room/create", {"user_id": 1001, "room": {"name": "1001"}})
     invitation = post("/bot/invitation/create", {"user_id": 1001, "addressee": {"alias": "alias1002"}}).json()
@@ -640,9 +641,8 @@ def test_daily_info():
     r = post("/bot/room/daily_info", {"user_id": 1001})
     assert r.status_code == 200 and (
         len(tasks := r.json()["tasks"]) == 2
-        and {"id": task1, "name": "task1001", "today_user_id": 1001} in tasks
-        and {"id": task2, "name": "task1002", "today_user_id": 1002} in tasks
-        and not any(map(lambda t: t["id"] == task_inactive_1 or t["id"] == task_inactive_2, tasks))
+        and {"id": task1, "name": "task1001", "today_executor": {"alias": None, "fullname": "fullname1001"}} in tasks
+        and {"id": task2, "name": "task1002", "today_executor": {"alias": "alias1002", "fullname": None}} in tasks
     )
 
 
@@ -750,7 +750,10 @@ async def test_reject_invitation():
 
 def test_get_order_info():
     r = post("/bot/order/info", {"user_id": 1, "order": {"id": 1}})
-    assert r.status_code == 200 and r.json()["users"] == [2, 1]
+    assert r.status_code == 200 and r.json()["users"] == [
+        {"alias": None, "fullname": "full name2"},
+        {"alias": "alias1", "fullname": "name1"},
+    ]
 
 
 @pytest.mark.asyncio

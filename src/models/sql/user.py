@@ -20,8 +20,8 @@ class User(SQLModel, table=True):
     id: int = Field(sa_column=Column(BigInteger(), primary_key=True, autoincrement=False))
     alias: str | None = Field(max_length=255, nullable=True, default=None, index=True)
     fullname: str | None = Field(max_length=255, nullable=True, default=None)
-    room_id: Optional[int] = Field(sa_column_args=(ForeignKey("rooms.id", onupdate="CASCADE", ondelete="SET NULL"),))
-    register_datetime: Optional[datetime] = Field(sa_column_kwargs={"server_default": func.now()})
+    room_id: int | None = Field(sa_column_args=(ForeignKey("rooms.id", onupdate="CASCADE", ondelete="SET NULL"),))
+    register_datetime: datetime | None = Field(sa_column_kwargs={"server_default": func.now()})
 
     room: Optional["Room"] = Relationship(back_populates="users", sa_relationship_kwargs={"lazy": "joined"})
     # invitations: list["Invitation"] = Relationship(sa_relationship_kwargs={"lazy": "joined"})
