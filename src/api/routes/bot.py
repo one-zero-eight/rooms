@@ -386,3 +386,27 @@ async def save_user_fullname(
     user.fullname = fullname
     await db.commit()
     return True
+
+
+@bot_router.post("/task/delete", response_description="True if the task was deleted")
+async def delete_task(room: ROOM_DEPENDENCY, task_id: Annotated[int, Body()], db: DB_SESSION_DEPENDENCY) -> bool:
+    task: Task = await check_task_exists(task_id, room.id, db)
+    await db.delete(task)
+    await db.commit()
+    return True
+
+
+@bot_router.post("/order/delete", response_description="True if the order was deleted")
+async def delete_order(room: ROOM_DEPENDENCY, order_id: Annotated[int, Body()], db: DB_SESSION_DEPENDENCY) -> bool:
+    order: Order = await check_order_exists(order_id, room.id, db)
+    await db.delete(order)
+    await db.commit()
+    return True
+
+
+@bot_router.post("/order/is_in_use", response_description="True if the order is used in some tasks")
+async def is_order_in_use(room: ROOM_DEPENDENCY, order_id: Annotated[int, Body()], db: DB_SESSION_DEPENDENCY) -> bool:
+    await check_order_exists(order_id, room.id, db)
+    if (await db.execute(select(exists(Task)).where(Task.order_id == order_id))).scalar():
+        return True
+    return False

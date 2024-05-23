@@ -202,6 +202,24 @@ def test_save_fullname_user_not_exist():
     assert r.json()["code"] == 102
 
 
+def test_delete_task_user_not_exist():
+    r = post("/bot/task/delete", {"user_id": 0, "task_id": 1})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 102
+
+
+def test_delete_order_user_not_exist():
+    r = post("/bot/order/delete", {"user_id": 0, "order_id": 1})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 102
+
+
+def test_order_in_use_user_not_exist():
+    r = post("/bot/order/is_in_use", {"user_id": 0, "order_id": 1})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 102
+
+
 #############################
 
 
@@ -281,6 +299,24 @@ def test_get_task_info_user_has_no_room():
 
 def test_get_order_info_user_has_no_room():
     r = post("/bot/order/info", {"user_id": 3})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 105
+
+
+def test_delete_task_user_has_no_room():
+    r = post("/bot/task/delete", {"user_id": 3, "task_id": 1})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 105
+
+
+def test_delete_order_user_has_no_room():
+    r = post("/bot/order/delete", {"user_id": 3, "order_id": 1})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 105
+
+
+def test_order_in_use_user_has_no_room():
+    r = post("/bot/order/is_in_use", {"user_id": 3, "order_id": 1})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 105
 
@@ -471,6 +507,42 @@ async def test_accept_invitation_expired():
     )
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 118
+
+
+def test_delete_task_not_exist():
+    r = post("/bot/task/delete", {"user_id": 1, "task_id": 0})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 108
+
+
+def test_delete_task_not_yours_task():
+    r = post("/bot/task/delete", {"user_id": 1, "task_id": 2})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 117
+
+
+def test_delete_order_not_exist():
+    r = post("/bot/order/delete", {"user_id": 1, "order_id": 0})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 107
+
+
+def test_delete_order_not_yours_order():
+    r = post("/bot/order/delete", {"user_id": 1, "order_id": 2})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 117
+
+
+def test_order_in_use_not_exist():
+    r = post("/bot/order/is_in_use", {"user_id": 1, "order_id": 0})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 107
+
+
+def test_order_in_use_not_yours_order():
+    r = post("/bot/order/is_in_use", {"user_id": 1, "order_id": 2})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 117
 
 
 """
@@ -788,3 +860,28 @@ async def test_save_fullname():
     assert r.status_code == 200 and r.json()
     async with session_maker.get_session() as db:
         assert (await db.get(User, 1)).fullname == "fullname1"
+
+
+@pytest.mark.asyncio
+async def test_delete_task():
+    r = post("/bot/task/delete", {"user_id": 1, "task_id": 1})
+    assert r.status_code == 200 and r.json()
+    async with session_maker.get_session() as db:
+        assert (await db.get(Task, 1)) is None
+
+
+@pytest.mark.asyncio
+async def test_delete_order():
+    r = post("/bot/order/delete", {"user_id": 1, "order_id": 1})
+    assert r.status_code == 200 and r.json()
+    async with session_maker.get_session() as db:
+        assert (await db.get(Order, 1)) is None
+        assert (await db.get(TaskExecutor, (2, 1, 0))) is None
+        assert (await db.get(TaskExecutor, (1, 1, 1))) is None
+
+
+def test_order_in_use():
+    r = post("/bot/order/is_in_use", {"user_id": 1, "order_id": 1})
+    assert r.status_code == 200 and r.json()
+    r = post("/bot/order/is_in_use", {"user_id": 4, "order_id": 2})
+    assert r.status_code == 200 and not r.json()
