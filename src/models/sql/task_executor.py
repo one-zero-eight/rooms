@@ -1,11 +1,9 @@
-import typing
-
 from sqlalchemy import UniqueConstraint, ForeignKey, Column, BigInteger
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field
 
-if typing.TYPE_CHECKING:
-    from src.models.sql.user import User
-    from src.models.sql.order import Order
+# if typing.TYPE_CHECKING:
+#     from src.models.sql.user import User
+#     from src.models.sql.order import Order
 
 
 class TaskExecutor(SQLModel, table=True):
@@ -27,8 +25,8 @@ class TaskExecutor(SQLModel, table=True):
     )
     order_number: int = Field(primary_key=True, sa_column_kwargs={"autoincrement": False})
 
-    user: "User" = Relationship(back_populates="executors", sa_relationship_kwargs={"lazy": "joined"})
-    order: "Order" = Relationship(back_populates="executors", sa_relationship_kwargs={"lazy": "joined"})
+    # user: "User" = Relationship(back_populates="executors", sa_relationship_kwargs={"lazy": "joined"})
+    # order: "Order" = Relationship(back_populates="executors", sa_relationship_kwargs={"lazy": "joined"})
 
     def __init__(
         self,

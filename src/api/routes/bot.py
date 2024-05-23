@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Annotated, Sequence
+from typing import Annotated, Sequence, Iterable
 
 from fastapi import APIRouter, Body
 from sqlalchemy import select, exists, delete, update
@@ -73,12 +73,13 @@ async def create_user(user: CreateUserBody, db: DB_SESSION_DEPENDENCY) -> int:
 
 @bot_router.post("/room/create", response_description="The id of created room")
 async def create_room(user: USER_DEPENDENCY, room: CreateRoomBody, db: DB_SESSION_DEPENDENCY) -> int:
-    if user.room is not None:
+    if user.room_id is not None:
         raise UserHasRoomException()
 
     room = Room(name=room.name)
-    user.room = room
     db.add(room)
+    await db.flush()
+    user.room_id = room.id
     await db.commit()
 
     return room.id
@@ -141,7 +142,8 @@ async def accept_invitation(user: USER_DEPENDENCY, invitation: AcceptInvitationB
 async def create_order(
     room: ROOM_DEPENDENCY, order: CreateOrderBody, db: DB_SESSION_DEPENDENCY, settings: SETTINGS_DEPENDENCY
 ) -> int:
-    number_of_orders = len(room.orders)
+    # number_of_orders = len(room.orders)
+    number_of_orders: int = await db.scalar(select(count()).where(Order.room_id == room.id))
     if number_of_orders >= settings.MAX_ORDERS:
         raise TooManyOrdersException()
 
@@ -155,11 +157,13 @@ async def create_order(
             raise SpecifiedUserNotInRoomException(user_id)
 
     order = Order(room_id=room.id)
+    db.add(order)
+    await db.flush()
     for i, user in enumerate(order_list):
         executor = TaskExecutor(user_id=user.id, order_number=i)
-        executor.order = order
+        executor.order_id = order.id
+        db.add(executor)
 
-    db.add(order)
     await db.commit()
 
     return order.id
@@ -169,7 +173,8 @@ async def create_order(
 async def create_task(
     room: ROOM_DEPENDENCY, task: CreateTaskBody, db: DB_SESSION_DEPENDENCY, settings: SETTINGS_DEPENDENCY
 ) -> int:
-    number_of_tasks = len(room.tasks)
+    # number_of_tasks = len(room.tasks)
+    number_of_tasks: int = await db.scalar(select(count()).where(Task.room_id == room.id))
     if number_of_tasks >= settings.MAX_TASKS:
         raise TooManyTasksException()
 
@@ -204,12 +209,17 @@ async def modify_task(room: ROOM_DEPENDENCY, task: ModifyTaskBody, db: DB_SESSIO
 @bot_router.post("/room/daily_info", response_description="Statuses of the tasks of the room")
 async def get_daily_info(room: ROOM_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> DailyInfoResponse:
     response = DailyInfoResponse(tasks=[])
-    task: Task
-    for task in room.tasks:
+    tasks: Iterable[Task] = await db.scalars(select(Task).where(Task.room_id == room.id))
+    for task in tasks:
         if task.is_inactive():
             continue
 
-        executors = task.order.executors
+        # executors = task.order.executors
+        executors: Sequence[TaskExecutor] = (
+            await db.scalars(
+                select(TaskExecutor).order_by(TaskExecutor.order_number).where(TaskExecutor.order_id == task.order_id)
+            )
+        ).all()
         i = (datetime.now() - task.start_date).days % len(executors)
 
         today_executor: TaskExecutor
@@ -234,8 +244,10 @@ async def get_incoming_invitations(user: USER_DEPENDENCY, db: DB_SESSION_DEPENDE
     if user.alias is None:
         return response
 
-    i: Invitation
-    for i in (await db.execute(select(Invitation).where(Invitation.addressee_alias == user.alias))).unique().scalars():
+    invitations: Iterable[Invitation] = await db.scalars(
+        select(Invitation).where(Invitation.addressee_alias == user.alias)
+    )
+    for i in invitations:
         if i.expiration_date <= datetime.now():
             await db.delete(i)
             continue
@@ -256,7 +268,7 @@ async def get_incoming_invitations(user: USER_DEPENDENCY, db: DB_SESSION_DEPENDE
 
 @bot_router.post("/room/info", response_description="Info about the user's room")
 async def get_room_info(room: ROOM_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> RoomInfoResponse:
-    user_ids = [id_ for id_ in (await db.execute(select(User.id).where(User.room_id == room.id))).unique().scalars()]
+    user_ids = [id_ for id_ in await db.scalars(select(User.id).where(User.room_id == room.id))]
     users = [await db.get_one(User, id_) for id_ in user_ids]
     return RoomInfoResponse(
         id=room.id, name=room.name, users=[UserInfo(alias=user.alias, fullname=user.fullname) for user in users]
@@ -277,10 +289,10 @@ async def leave_room(user: USER_DEPENDENCY, room: ROOM_DEPENDENCY, db: DB_SESSIO
 
 
 @bot_router.post("/task/list", response_description="The full list of a room's tasks")
-async def get_tasks(room: ROOM_DEPENDENCY) -> TaskListResponse:
+async def get_tasks(room: ROOM_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> TaskListResponse:
     response = TaskListResponse(tasks=[])
-    task: Task
-    for task in room.tasks:
+    tasks: Iterable[Task] = await db.scalars(select(Task).where(Task.room_id == room.id))
+    for task in tasks:
         inactive = task.is_inactive()
         response.tasks.append(TaskInfo(id=task.id, name=task.name, inactive=inactive))
 
@@ -346,18 +358,12 @@ async def reject_invitation(user: USER_DEPENDENCY, invitation: RejectInvitationB
 async def get_order_info(room: ROOM_DEPENDENCY, order: OrderInfoBody, db: DB_SESSION_DEPENDENCY) -> OrderInfoResponse:
     order = await check_order_exists(order.id, room.id, db)
 
-    users: Sequence[User] = (
-        (
-            await db.execute(
-                select(User)
-                .select_from(TaskExecutor)
-                .join(User)
-                .order_by(TaskExecutor.order_number)
-                .where(TaskExecutor.order_id == order.id)
-            )
-        )
-        .unique()
-        .scalars()
+    users: Iterable[User] = await db.scalars(
+        select(User)
+        .select_from(TaskExecutor)
+        .join(User)
+        .order_by(TaskExecutor.order_number)
+        .where(TaskExecutor.order_id == order.id)
     )
 
     return OrderInfoResponse(users=[UserInfo(alias=u.alias, fullname=u.fullname) for u in users])

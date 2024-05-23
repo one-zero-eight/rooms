@@ -1,14 +1,13 @@
-import typing
 from datetime import datetime, timedelta
 
 from sqlalchemy import ForeignKey, BigInteger, Column
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field
 
 from src.config import get_settings
 
-if typing.TYPE_CHECKING:
-    from src.models.sql.user import User
-    from src.models.sql.room import Room
+# if typing.TYPE_CHECKING:
+#     from src.models.sql.user import User
+#     from src.models.sql.room import Room
 
 
 class Invitation(SQLModel, table=True):
@@ -24,8 +23,8 @@ class Invitation(SQLModel, table=True):
         default_factory=lambda: datetime.now() + timedelta(days=get_settings().INVITATION_LIFESPAN_DAYS)
     )
 
-    sender: "User" = Relationship(sa_relationship_kwargs={"lazy": "joined"})
-    room: "Room" = Relationship(back_populates="invitations", sa_relationship_kwargs={"lazy": "joined"})
+    # sender: "User" = Relationship(sa_relationship_kwargs={"lazy": "joined"})
+    # room: "Room" = Relationship(back_populates="invitations", sa_relationship_kwargs={"lazy": "joined"})
 
     def __init__(
         self,

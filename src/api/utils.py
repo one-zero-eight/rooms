@@ -50,11 +50,11 @@ async def check_room_exists(room_id: int, db: AsyncSession) -> Room:
     return room
 
 
-async def room_dependency(user: USER_DEPENDENCY) -> Room:
-    if user.room is None:
+async def room_dependency(user: USER_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> Room:
+    if user.room_id is None:
         raise UserWithoutRoomException()
     # noinspection PyTypeChecker
-    return user.room
+    return await db.get_one(Room, user.room_id)
 
 
 ROOM_DEPENDENCY = Annotated[Room, Depends(room_dependency)]

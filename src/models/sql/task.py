@@ -1,12 +1,11 @@
-import typing
 from datetime import datetime
 from typing import Optional
 
 from sqlalchemy import ForeignKey
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field
 
-if typing.TYPE_CHECKING:
-    from src.models.sql.order import Order
+# if typing.TYPE_CHECKING:
+#     from src.models.sql.order import Order
 
 
 class Task(SQLModel, table=True):
@@ -20,7 +19,7 @@ class Task(SQLModel, table=True):
     period: int  # in days
     order_id: Optional[int] = Field(sa_column_args=(ForeignKey("orders.id", onupdate="CASCADE", ondelete="SET NULL"),))
 
-    order: Optional["Order"] = Relationship(back_populates="tasks", sa_relationship_kwargs={"lazy": "joined"})
+    # order: Optional["Order"] = Relationship(back_populates="tasks", sa_relationship_kwargs={"lazy": "joined"})
 
     def __init__(
         self,

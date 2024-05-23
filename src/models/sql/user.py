@@ -1,16 +1,14 @@
-import typing
 from datetime import datetime
-from typing import Optional
 
 from sqlalchemy import ForeignKey, func, BigInteger, Column
-from sqlmodel import SQLModel, Field, Relationship
+from sqlmodel import SQLModel, Field
 
-if typing.TYPE_CHECKING:
-    from src.models.sql.room import Room
-
-    # from src.models.sql.invitation import Invitation
-    from src.models.sql.order import Order
-    from src.models.sql.task_executor import TaskExecutor
+# if typing.TYPE_CHECKING:
+#     from src.models.sql.room import Room
+#
+#     # from src.models.sql.invitation import Invitation
+#     from src.models.sql.order import Order
+#     from src.models.sql.task_executor import TaskExecutor
 
 
 class User(SQLModel, table=True):
@@ -23,12 +21,12 @@ class User(SQLModel, table=True):
     room_id: int | None = Field(sa_column_args=(ForeignKey("rooms.id", onupdate="CASCADE", ondelete="SET NULL"),))
     register_datetime: datetime | None = Field(sa_column_kwargs={"server_default": func.now()})
 
-    room: Optional["Room"] = Relationship(back_populates="users", sa_relationship_kwargs={"lazy": "joined"})
-    # invitations: list["Invitation"] = Relationship(sa_relationship_kwargs={"lazy": "joined"})
-    orders: list["Order"] = Relationship(
-        back_populates="users", sa_relationship_kwargs={"lazy": "joined", "secondary": "executors", "viewonly": True}
-    )
-    executors: list["TaskExecutor"] = Relationship(back_populates="user", sa_relationship_kwargs={"lazy": "joined"})
+    # room: Optional["Room"] = Relationship(back_populates="users", sa_relationship_kwargs={"lazy": "joined"})
+    # # invitations: list["Invitation"] = Relationship(sa_relationship_kwargs={"lazy": "joined"})
+    # orders: list["Order"] = Relationship(
+    #     back_populates="users", sa_relationship_kwargs={"lazy": "joined", "secondary": "executors", "viewonly": True}
+    # )
+    # executors: list["TaskExecutor"] = Relationship(back_populates="user", sa_relationship_kwargs={"lazy": "joined"})
 
     def __init__(
         self,

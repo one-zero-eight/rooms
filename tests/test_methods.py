@@ -35,22 +35,28 @@ async def setup_data_in_db():
         # IMPORTANT: be careful with default autoincrement and fixed IDs
         # this file currently sets all ids from code
         # a test's ids start from 1000
+        session.add(Room(1, "room1"))
+        session.add(Room(2, "room2"))
+        await session.flush()
+
         session.add(User(1, 1, "alias1", "name1"))
         session.add(User(2, 1, None, "full name2"))
         session.add(User(3, alias="alias3"))
         session.add(User(4, 2))
         session.add(User(5))
-        session.add(Room(1, "room1"))
-        session.add(Room(2, "room2"))
+        await session.flush()
+
         session.add(Invitation(1, 1, "alias3", 1))
         session.add(Invitation(2, 1, "alias4", 2))
 
         session.add(Order(1, 1))
+        await session.flush()
         session.add(TaskExecutor(2, 1, 0))
         session.add(TaskExecutor(1, 1, 1))
         session.add(Task(1, "task1", "bla-bla", 1, datetime.now() - timedelta(hours=12), 1, 1))
 
         session.add(Order(2, 2))
+        await session.flush()
         session.add(TaskExecutor(4, 2, 0))
         session.add(Task(2, "task2", "bla-bla", 2, datetime.now() - timedelta(hours=12), 1, None))
 
@@ -283,7 +289,9 @@ def test_get_order_info_user_has_no_room():
 async def test_invite_too_many():
     async with session_maker.get_session() as db:
         db.add(Room(1001, "1001"))
+        await db.flush()
         db.add(User(1001, 1001))
+        await db.flush()
         for i in range(get_settings().MAX_INVITATIONS):
             db.add(Invitation(id_=1001 + i, sender_id=1001, addressee_alias="durov", room_id=1001))
         await db.commit()
@@ -296,6 +304,7 @@ async def test_invite_too_many():
 async def test_create_order_too_many():
     async with session_maker.get_session() as db:
         db.add(Room(1001, "1001"))
+        await db.flush()
         db.add(User(1001, 1001))
         for i in range(get_settings().MAX_ORDERS):
             db.add(Order(id_=1001 + i, room_id=1001))
@@ -309,6 +318,7 @@ async def test_create_order_too_many():
 async def test_create_task_too_many():
     async with session_maker.get_session() as db:
         db.add(Room(1001, "1001"))
+        await db.flush()
         db.add(User(1001, 1001))
         db.add(Order(1001, 1001))
         for i in range(get_settings().MAX_TASKS):
@@ -485,8 +495,9 @@ async def test_create_room():
 @pytest.mark.asyncio
 async def test_invite():
     async with session_maker.get_session() as db:
-        db.add(User(1001, 1001))
         db.add(Room(1001, "1001"))
+        await db.flush()
+        db.add(User(1001, 1001))
         await db.commit()
     r = post("/bot/invitation/create", {"user_id": 1001, "addressee": {"alias": "top_alias"}})
     assert r.status_code == 200 and isinstance(r.json(), int)
@@ -495,9 +506,11 @@ async def test_invite():
 @pytest.mark.asyncio
 async def test_accept_invitation():
     async with session_maker.get_session() as db:
+        db.add(Room(1001, "1001"))
+        await db.flush()
         db.add(User(1001, 1001))
         db.add(User(1002, alias="alias1002"))
-        db.add(Room(1001, "1001"))
+        await db.flush()
         db.add(Invitation(1001, 1001, "alias1002", 1001))
         await db.commit()
     r = post("/bot/invitation/accept", {"user_id": 1002, "invitation": {"id": 1001}})
@@ -507,9 +520,9 @@ async def test_accept_invitation():
 @pytest.mark.asyncio
 async def test_create_order():
     async with session_maker.get_session() as db:
-        db.add(User(1001, 1001))
-        db.add(User(1002, 1001))
         db.add(Room(1001, "1001"))
+        await db.flush()
+        db.add_all([User(1001, 1001), User(1002, 1001)])
         await db.commit()
     r = post("/bot/order/create", {"user_id": 1001, "order": {"users": [1002, 1001]}})
     assert r.status_code == 200 and isinstance(r.json(), int)
@@ -518,9 +531,10 @@ async def test_create_order():
 @pytest.mark.asyncio
 async def test_create_task():
     async with session_maker.get_session() as db:
+        db.add(Room(1001, "1001"))
+        await db.flush()
         db.add(User(1001, 1001))
         db.add(User(1002, 1001))
-        db.add(Room(1001, "1001"))
         await db.commit()
     order_id = post("/bot/order/create", {"user_id": 1001, "order": {"users": [1002, 1001]}}).json()
     r = post(
@@ -542,8 +556,10 @@ async def test_create_task():
 @pytest.mark.asyncio
 async def test_modify_task():
     async with session_maker.get_session() as db:
-        db.add(User(1001, 1001))
         db.add(Room(1001, "1001"))
+        await db.flush()
+        db.add(User(1001, 1001))
+        await db.flush()
         db.add(Order(1001, 1001))
         db.add(TaskExecutor(1001, 1001, 1))
         db.add(Task(1001, "1001", "", 1001, datetime.now(), 1, 1001))
