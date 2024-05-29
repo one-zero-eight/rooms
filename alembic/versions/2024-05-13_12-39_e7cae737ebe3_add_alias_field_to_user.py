@@ -1,7 +1,7 @@
 """Add alias field to user
 
 Revision ID: e7cae737ebe3
-Revises: af1efa064d3c
+Revises: 02dd4f72a602
 Create Date: 2024-05-13 12:39:28.632694
 
 """
@@ -14,7 +14,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = "e7cae737ebe3"
-down_revision: Union[str, None] = "af1efa064d3c"
+down_revision: Union[str, None] = "02dd4f72a602"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

@@ -1,7 +1,7 @@
 """Add fullname column to users
 
 Revision ID: 9a560e119420
-Revises: eebf318a4b86
+Revises: e7cae737ebe3
 Create Date: 2024-05-18 15:24:21.074861
 
 """
@@ -14,7 +14,7 @@ import sqlalchemy as sa
 
 # revision identifiers, used by Alembic.
 revision: str = "9a560e119420"
-down_revision: Union[str, None] = "eebf318a4b86"
+down_revision: Union[str, None] = "e7cae737ebe3"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 

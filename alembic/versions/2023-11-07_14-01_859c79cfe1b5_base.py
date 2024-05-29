@@ -43,7 +43,7 @@ def upgrade() -> None:
     )
     op.create_table(
         "users",
-        sa.Column("telegram_id", sa.Integer(), autoincrement=False, nullable=False),
+        sa.Column("telegram_id", sa.BigInteger(), autoincrement=False, nullable=False),
         sa.Column("room_id", sa.Integer(), nullable=True),
         sa.Column("register_datetime", sa.DateTime(), server_default=sa.func.now(), nullable=True),
         sa.ForeignKeyConstraint(["room_id"], ["rooms.id"], onupdate="CASCADE", ondelete="SET NULL"),
@@ -51,7 +51,7 @@ def upgrade() -> None:
     )
     op.create_table(
         "executors",
-        sa.Column("user_id", sa.Integer(), autoincrement=False, nullable=False),
+        sa.Column("user_id", sa.BigInteger(), autoincrement=False, nullable=False),
         sa.Column("order_id", sa.Integer(), autoincrement=False, nullable=False),
         sa.Column("order_number", sa.Integer(), nullable=False),
         sa.ForeignKeyConstraint(["order_id"], ["orders.id"], onupdate="CASCADE", ondelete="CASCADE"),
@@ -61,7 +61,7 @@ def upgrade() -> None:
     )
     op.create_table(
         "invitations",
-        sa.Column("sender_id", sa.Integer(), nullable=False),
+        sa.Column("sender_id", sa.BigInteger(), nullable=False),
         sa.Column("adressee_id", sa.Integer(), nullable=False),
         sa.Column("room_id", sa.Integer(), nullable=False),
         sa.Column("id", sa.Integer(), nullable=False),
