@@ -41,6 +41,7 @@ from src.schemas.method_input_schemas import (
     DeleteInvitationBody,
     RejectInvitationBody,
     OrderInfoBody,
+    RemoveTaskParametersBody,
 )
 from src.schemas.method_output_schemas import (
     DailyInfoResponse,
@@ -202,6 +203,20 @@ async def modify_task(room: ROOM_DEPENDENCY, task: ModifyTaskBody, db: DB_SESSIO
             if param == "order_id" and value is not None:
                 await check_order_exists(value, room.id, db)
             setattr(task_obj, param, value)
+    await db.commit()
+
+    return True
+
+
+@bot_router.post("/task/remove_parameters", response_description="True if the operation was successful")
+async def remove_task_parameters(
+    room: ROOM_DEPENDENCY, task: RemoveTaskParametersBody, db: DB_SESSION_DEPENDENCY
+) -> bool:
+    task_obj = await check_task_exists(task.id, room.id, db)
+
+    for param in ("description", "order_id"):
+        if getattr(task, param):
+            setattr(task_obj, param, None)
     await db.commit()
 
     return True

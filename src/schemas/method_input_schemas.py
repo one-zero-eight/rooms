@@ -40,6 +40,12 @@ class ModifyTaskBody(BaseModel):
     order_id: int | None = None
 
 
+class RemoveTaskParametersBody(BaseModel):
+    id: int
+    description: bool | None = False
+    order_id: bool | None = False
+
+
 class TaskInfoBody(BaseModel):
     id: int
 

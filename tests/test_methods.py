@@ -133,6 +133,12 @@ def test_modify_task_user_not_exist():
     assert r.json()["code"] == 102
 
 
+def test_remove_task_parameters_user_not_exist():
+    r = post("/bot/task/remove_parameters", {"user_id": 0, "task": {"id": 1, "order_id": True}})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 102
+
+
 def test_daily_info_user_not_exist():
     r = post("/bot/room/daily_info", {"user_id": 0})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
@@ -272,6 +278,12 @@ def test_modify_task_user_has_no_room():
     r = post(
         "/bot/task/modify", {"user_id": 3, "task": {"id": 1, "name": "a", "start_date": 0, "period": 1, "order_id": 1}}
     )
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 105
+
+
+def test_remove_task_parameters_user_has_no_room():
+    r = post("/bot/task/remove_parameters", {"user_id": 3, "task": {"id": 1, "order_id": True}})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 105
 
@@ -452,6 +464,15 @@ def test_modify_task_task_not_exist():
     assert r.json()["code"] == 108
 
 
+def test_remove_task_parameters_task_not_exist():
+    r = post(
+        "/bot/task/remove_parameters",
+        {"user_id": 1, "task": {"id": 0, "order_id": True}},
+    )
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 108
+
+
 def test_get_task_info_task_not_exist():
     r = post(
         "/bot/task/info",
@@ -483,6 +504,15 @@ def test_modify_task_not_yours_order():
     r = post(
         "/bot/task/modify",
         {"user_id": 4, "task": {"id": 2, "name": "one", "start_date": 0, "period": 1, "order_id": 1}},
+    )
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 117
+
+
+def test_remove_task_parameters_not_yours_task():
+    r = post(
+        "/bot/task/remove_parameters",
+        {"user_id": 4, "task": {"id": 1, "order_id": True}},
     )
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 117
@@ -708,6 +738,7 @@ def setup_some_tasks():
             "user_id": 1001,
             "task": {
                 "name": "task1002",
+                "description": "description1002",
                 "start_date": (datetime.now().astimezone() - timedelta(days=1)).isoformat(),
                 "period": 1,
                 "order_id": order_id,
@@ -740,6 +771,17 @@ def setup_some_tasks():
     ).json()
 
     return task1, task2, task_inactive_1, task_inactive_2
+
+
+@pytest.mark.asyncio
+async def test_remove_task_parameters():
+    t1, t2, _, _ = setup_some_tasks()
+    r = post("/bot/task/remove_parameters", {"user_id": 1001, "task": {"id": t1, "order_id": True}})
+    assert r.status_code == 200 and r.json() is True
+    r = post("/bot/task/remove_parameters", {"user_id": 1001, "task": {"id": t2, "description": True}})
+    assert r.status_code == 200 and r.json() is True
+    async with session_maker.get_session() as db:
+        assert (await db.get_one(Task, t1)).order_id is None and (await db.get_one(Task, t2)).description is None
 
 
 def test_daily_info():
