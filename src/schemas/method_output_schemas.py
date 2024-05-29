@@ -35,14 +35,14 @@ class RoomInfoResponse(BaseModel):
     users: list[UserInfo]
 
 
-class Task(BaseModel):
+class TaskInfo(BaseModel):
     id: int
     name: str
     inactive: bool
 
 
 class TaskListResponse(BaseModel):
-    tasks: list[Task]
+    tasks: list[TaskInfo]
 
 
 class TaskInfoResponse(BaseModel):
@@ -67,3 +67,8 @@ class SentInvitationsResponse(BaseModel):
 
 class OrderInfoResponse(BaseModel):
     users: list[UserInfo]
+
+
+class ListOfOrdersResponse(BaseModel):
+    users: dict[int, UserInfo]
+    orders: dict[int, list[int]]

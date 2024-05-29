@@ -49,12 +49,13 @@ from src.schemas.method_output_schemas import (
     IncomingInvitationInfo,
     RoomInfoResponse,
     TaskListResponse,
-    Task as TaskInfo,
+    TaskInfo,
     TaskInfoResponse,
     SentInvitationsResponse,
     SentInvitationInfo,
     OrderInfoResponse,
     UserInfo,
+    ListOfOrdersResponse,
 )
 
 bot_router = APIRouter(prefix="/bot", dependencies=[BOT_ACCESS_DEPENDENCY])
@@ -318,7 +319,7 @@ async def get_task_info(room: ROOM_DEPENDENCY, task: TaskInfoBody, db: DB_SESSIO
 async def get_sent_invitations(user: USER_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> SentInvitationsResponse:
     invitations: list[SentInvitationInfo] = []
     i: Invitation
-    for i in (await db.execute(select(Invitation).where(Invitation.sender_id == user.id))).unique().scalars():
+    for i in await db.scalars(select(Invitation).where(Invitation.sender_id == user.id)):
         if i.expiration_date <= datetime.now():
             await db.delete(i)
             continue
@@ -410,3 +411,28 @@ async def is_order_in_use(room: ROOM_DEPENDENCY, order_id: Annotated[int, Body()
     if (await db.execute(select(exists(Task)).where(Task.order_id == order_id))).scalar():
         return True
     return False
+
+
+@bot_router.post("/room/list_of_orders", response_description="The list of existing orders with info about users")
+async def get_list_of_orders(room: ROOM_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> ListOfOrdersResponse:
+    orders: Iterable[Order] = await db.scalars(select(Order).where(Order.room_id == room.id))
+    response = ListOfOrdersResponse(users={}, orders={})
+    user_ids = set()
+    for order in orders:
+        users: list[int] = list(
+            await db.scalars(
+                select(User.id)
+                .select_from(TaskExecutor)
+                .join(User)
+                .order_by(TaskExecutor.order_number)
+                .where(TaskExecutor.order_id == order.id)
+            )
+        )
+        response.orders[order.id] = users
+        user_ids.update(users)
+
+    users: Iterable[User] = await db.scalars(select(User).where(User.id.in_(user_ids)))
+    for user in users:
+        response.users[user.id] = UserInfo(alias=user.alias, fullname=user.fullname)
+
+    return response

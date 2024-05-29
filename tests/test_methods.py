@@ -50,15 +50,18 @@ async def setup_data_in_db():
         session.add(Invitation(2, 1, "alias4", 2))
 
         session.add(Order(1, 1))
+        session.add(Order(2, 2))
+        session.add(Order(3, 2))
         await session.flush()
+
         session.add(TaskExecutor(2, 1, 0))
         session.add(TaskExecutor(1, 1, 1))
         session.add(Task(1, "task1", "bla-bla", 1, datetime.now() - timedelta(hours=12), 1, 1))
 
-        session.add(Order(2, 2))
-        await session.flush()
         session.add(TaskExecutor(4, 2, 0))
+        session.add(TaskExecutor(4, 3, 0))
         session.add(Task(2, "task2", "bla-bla", 2, datetime.now() - timedelta(hours=12), 1, None))
+        await session.flush()
 
         await session.commit()
 
@@ -220,6 +223,12 @@ def test_order_in_use_user_not_exist():
     assert r.json()["code"] == 102
 
 
+def test_list_of_orders_user_not_exist():
+    r = post("/bot/room/list_of_orders", {"user_id": 0})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 102
+
+
 #############################
 
 
@@ -319,6 +328,15 @@ def test_order_in_use_user_has_no_room():
     r = post("/bot/order/is_in_use", {"user_id": 3, "order_id": 1})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 105
+
+
+def test_list_of_orders_user_has_no_room():
+    r = post("/bot/room/list_of_orders", {"user_id": 3})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 105
+
+
+#########################
 
 
 @pytest.mark.asyncio
@@ -885,3 +903,20 @@ def test_order_in_use():
     assert r.status_code == 200 and r.json()
     r = post("/bot/order/is_in_use", {"user_id": 4, "order_id": 2})
     assert r.status_code == 200 and not r.json()
+
+
+def test_list_of_orders():
+    r = post("/bot/room/list_of_orders", {"user_id": 1})
+    assert r.status_code == 200 and r.json() == {
+        "users": {
+            "1": {"alias": "alias1", "fullname": "name1"},
+            "2": {"alias": None, "fullname": "full name2"},
+        },
+        "orders": {"1": [2, 1]},
+    }
+
+    r = post("/bot/room/list_of_orders", {"user_id": 4})
+    assert r.status_code == 200 and r.json() == {
+        "users": {"4": {"alias": None, "fullname": None}},
+        "orders": {"2": [4], "3": [4]},
+    }

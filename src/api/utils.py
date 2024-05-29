@@ -53,7 +53,6 @@ async def check_room_exists(room_id: int, db: AsyncSession) -> Room:
 async def room_dependency(user: USER_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> Room:
     if user.room_id is None:
         raise UserWithoutRoomException()
-    # noinspection PyTypeChecker
     return await db.get_one(Room, user.room_id)
 
 
