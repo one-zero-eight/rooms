@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 
 class UserInfo(BaseModel):
+    id: int
     alias: str | None
     fullname: str | None
 
@@ -70,5 +71,5 @@ class OrderInfoResponse(BaseModel):
 
 
 class ListOfOrdersResponse(BaseModel):
-    users: dict[int, UserInfo]
+    users: list[UserInfo]
     orders: dict[int, list[int]]

@@ -789,8 +789,10 @@ def test_daily_info():
     r = post("/bot/room/daily_info", {"user_id": 1001})
     assert r.status_code == 200 and (
         len(tasks := r.json()["tasks"]) == 2
-        and {"id": task1, "name": "task1001", "today_executor": {"alias": None, "fullname": "fullname1001"}} in tasks
-        and {"id": task2, "name": "task1002", "today_executor": {"alias": "alias1002", "fullname": None}} in tasks
+        and {"id": task1, "name": "task1001", "today_executor": {"id": 1001, "alias": None, "fullname": "fullname1001"}}
+        in tasks
+        and {"id": task2, "name": "task1002", "today_executor": {"id": 1002, "alias": "alias1002", "fullname": None}}
+        in tasks
     )
 
 
@@ -799,8 +801,9 @@ def test_incoming_invitations():
     r = post("/bot/invitation/inbox", {"user_id": 3})
     assert r.status_code == 200 and (
         len(invites := r.json()["invitations"]) == 2
-        and {"id": 1, "sender": {"alias": "alias1", "fullname": "name1"}, "room": 1, "room_name": "room1"} in invites
-        and {"id": inv2, "sender": {"alias": None, "fullname": "full name2"}, "room": 1, "room_name": "room1"}
+        and {"id": 1, "sender": {"id": 1, "alias": "alias1", "fullname": "name1"}, "room": 1, "room_name": "room1"}
+        in invites
+        and {"id": inv2, "sender": {"id": 2, "alias": None, "fullname": "full name2"}, "room": 1, "room_name": "room1"}
         in invites
     )
 
@@ -815,8 +818,8 @@ def test_room_info():
         and info["id"] == 1
         and (
             len(users := list(info["users"])) == 2
-            and {"fullname": "name1", "alias": "alias1"} in users
-            and {"fullname": "full name2", "alias": None} in users
+            and {"id": 1, "fullname": "name1", "alias": "alias1"} in users
+            and {"id": 2, "fullname": "full name2", "alias": None} in users
         )
     )
 
@@ -899,8 +902,8 @@ async def test_reject_invitation():
 def test_get_order_info():
     r = post("/bot/order/info", {"user_id": 1, "order": {"id": 1}})
     assert r.status_code == 200 and r.json()["users"] == [
-        {"alias": None, "fullname": "full name2"},
-        {"alias": "alias1", "fullname": "name1"},
+        {"id": 2, "alias": None, "fullname": "full name2"},
+        {"id": 1, "alias": "alias1", "fullname": "name1"},
     ]
 
 
@@ -949,16 +952,19 @@ def test_order_in_use():
 
 def test_list_of_orders():
     r = post("/bot/room/list_of_orders", {"user_id": 1})
-    assert r.status_code == 200 and r.json() == {
-        "users": {
-            "1": {"alias": "alias1", "fullname": "name1"},
-            "2": {"alias": None, "fullname": "full name2"},
-        },
-        "orders": {"1": [2, 1]},
-    }
+    assert (
+        r.status_code == 200
+        and r.json()["orders"] == {"1": [2, 1]}
+        and (
+            len(users := r.json()["users"]) == 2
+            and {"id": 1, "alias": "alias1", "fullname": "name1"} in users
+            and {"id": 2, "alias": None, "fullname": "full name2"} in users
+        )
+    )
 
     r = post("/bot/room/list_of_orders", {"user_id": 4})
-    assert r.status_code == 200 and r.json() == {
-        "users": {"4": {"alias": None, "fullname": None}},
-        "orders": {"2": [4], "3": [4]},
-    }
+    assert (
+        r.status_code == 200
+        and r.json()["orders"] == {"2": [4], "3": [4]}
+        and (len(users := r.json()["users"]) == 1 and users[0] == {"id": 4, "alias": None, "fullname": None})
+    )

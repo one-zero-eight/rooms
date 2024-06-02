@@ -248,7 +248,7 @@ async def get_daily_info(room: ROOM_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> Da
             raise RuntimeError(f"Order number {i} is not found for task_id = {task.id}")
 
         executor_as_user: User = await db.get_one(User, today_executor.user_id)
-        executor_info = UserInfo(alias=executor_as_user.alias, fullname=executor_as_user.fullname)
+        executor_info = UserInfo.model_validate(executor_as_user, from_attributes=True)
         response.tasks.append(TaskDailyInfo(id=task.id, name=task.name, today_executor=executor_info))
 
     return response
@@ -272,7 +272,7 @@ async def get_incoming_invitations(user: USER_DEPENDENCY, db: DB_SESSION_DEPENDE
         response.invitations.append(
             IncomingInvitationInfo(
                 id=i.id,
-                sender=UserInfo(alias=sender.alias, fullname=sender.fullname),
+                sender=UserInfo.model_validate(sender, from_attributes=True),
                 room=i.room_id,
                 room_name=room_name,
             )
@@ -287,7 +287,7 @@ async def get_room_info(room: ROOM_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> Roo
     user_ids = [id_ for id_ in await db.scalars(select(User.id).where(User.room_id == room.id))]
     users = [await db.get_one(User, id_) for id_ in user_ids]
     return RoomInfoResponse(
-        id=room.id, name=room.name, users=[UserInfo(alias=user.alias, fullname=user.fullname) for user in users]
+        id=room.id, name=room.name, users=[UserInfo.model_validate(user, from_attributes=True) for user in users]
     )
 
 
@@ -382,7 +382,7 @@ async def get_order_info(room: ROOM_DEPENDENCY, order: OrderInfoBody, db: DB_SES
         .where(TaskExecutor.order_id == order.id)
     )
 
-    return OrderInfoResponse(users=[UserInfo(alias=u.alias, fullname=u.fullname) for u in users])
+    return OrderInfoResponse(users=[UserInfo.model_validate(u, from_attributes=True) for u in users])
 
 
 @bot_router.post("/user/save_alias", response_description="True if the alias was saved")
@@ -431,7 +431,7 @@ async def is_order_in_use(room: ROOM_DEPENDENCY, order_id: Annotated[int, Body()
 @bot_router.post("/room/list_of_orders", response_description="The list of existing orders with info about users")
 async def get_list_of_orders(room: ROOM_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> ListOfOrdersResponse:
     orders: Iterable[Order] = await db.scalars(select(Order).where(Order.room_id == room.id))
-    response = ListOfOrdersResponse(users={}, orders={})
+    response = ListOfOrdersResponse(users=[], orders={})
     user_ids = set()
     for order in orders:
         users: list[int] = list(
@@ -448,6 +448,6 @@ async def get_list_of_orders(room: ROOM_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -
 
     users: Iterable[User] = await db.scalars(select(User).where(User.id.in_(user_ids)))
     for user in users:
-        response.users[user.id] = UserInfo(alias=user.alias, fullname=user.fullname)
+        response.users.append(UserInfo.model_validate(user, from_attributes=True))
 
     return response
