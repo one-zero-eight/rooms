@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Annotated, Sequence, Iterable
 
 from fastapi import APIRouter, Body
-from sqlalchemy import select, exists, delete, update
+from sqlalchemy import select, exists, delete, update, func
 from sqlalchemy.sql.functions import count
 
 from src.api.auth.utils import BOT_ACCESS_DEPENDENCY
@@ -104,7 +104,7 @@ async def invite_person(
     if (
         await db.execute(
             select(exists(Invitation)).where(
-                Invitation.sender_id == user.id, Invitation.addressee_alias == addressee.alias
+                Invitation.sender_id == user.id, func.lower(Invitation.addressee_alias) == addressee.alias.lower()
             )
         )
     ).scalar():
@@ -130,7 +130,7 @@ async def accept_invitation(user: USER_DEPENDENCY, invitation: AcceptInvitationB
         await db.commit()
         raise InvitationExpiredException()
 
-    if invitation.addressee_alias != user.alias:
+    if user.alias is None or invitation.addressee_alias.lower() != user.alias.lower():
         raise NotYoursInvitationException()
 
     user.room_id = invitation.room_id
@@ -260,8 +260,10 @@ async def get_incoming_invitations(user: USER_DEPENDENCY, db: DB_SESSION_DEPENDE
     if user.alias is None:
         return response
 
-    invitations: Iterable[Invitation] = await db.scalars(
-        select(Invitation).where(Invitation.addressee_alias == user.alias)
+    invitations: Iterable[Invitation] = (
+        await db.scalars(select(Invitation).where(func.lower(Invitation.addressee_alias) == user.alias.lower()))
+        if user.alias is not None
+        else []
     )
     for i in invitations:
         if i.expiration_date <= datetime.now():
@@ -361,7 +363,7 @@ async def reject_invitation(user: USER_DEPENDENCY, invitation: RejectInvitationB
     if invitation is None:
         raise InvitationNotExistException()
 
-    if invitation.addressee_alias != user.alias:
+    if user.alias is None or invitation.addressee_alias.lower() != user.alias.lower():
         raise NotYoursInvitationException()
 
     await db.delete(invitation)
@@ -389,8 +391,16 @@ async def get_order_info(room: ROOM_DEPENDENCY, order: OrderInfoBody, db: DB_SES
 async def save_user_alias(
     user: USER_DEPENDENCY, db: DB_SESSION_DEPENDENCY, alias: Annotated[str | None, Body()] = None
 ) -> bool:
+    if user.alias is not None:
+        if alias is None:
+            await db.execute(delete(Invitation).where(func.lower(Invitation.addressee_alias) == user.alias.lower()))
+        else:
+            await db.execute(
+                update(Invitation)
+                .where(func.lower(Invitation.addressee_alias) == user.alias.lower())
+                .values(addressee_alias=alias)
+            )
     user.alias = alias
-    await db.execute(update(Invitation).where(Invitation.addressee_alias == user.alias).values(addressee_alias=alias))
     await db.commit()
     return True
 

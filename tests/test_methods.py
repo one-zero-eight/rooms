@@ -631,7 +631,7 @@ async def test_accept_invitation():
         db.add(User(1001, 1001))
         db.add(User(1002, alias="alias1002"))
         await db.flush()
-        db.add(Invitation(1001, 1001, "alias1002", 1001))
+        db.add(Invitation(1001, 1001, "ALIAS1002", 1001))
         await db.commit()
     r = post("/bot/invitation/accept", {"user_id": 1002, "invitation": {"id": 1001}})
     assert r.status_code == 200 and r.json() == 1001
