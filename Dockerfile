@@ -55,6 +55,8 @@ COPY --from=builder-base $PYSETUP_PATH $PYSETUP_PATH
 
 WORKDIR $PYSETUP_PATH
 COPY ./src ./src
+COPY ./alembic ./alembic
+COPY alembic.ini alembic.ini
 COPY ./scripts ./scripts
 COPY example.env ./
 EXPOSE 80
