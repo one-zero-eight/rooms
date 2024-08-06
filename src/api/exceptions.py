@@ -134,3 +134,8 @@ class InvitationExpiredException(MyException):
 class UserOwningException(MyException):
     def __init__(self, obj: str):
         super().__init__(status.HTTP_400_BAD_REQUEST, 119, f"The {obj} does not belong to the user")
+
+
+class RuleNotExistException(MyException):
+    def __init__(self):
+        super().__init__(status.HTTP_400_BAD_REQUEST, 120, "The rule is not found")

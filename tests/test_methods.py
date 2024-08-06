@@ -10,7 +10,7 @@ from src.api.auth.utils import create_jwt
 from src.config import get_settings
 from src.db_sessions.sqlalchemy_session import session_maker
 from src.main import app
-from src.models.sql import User, Room, Task, Order, TaskExecutor, Invitation
+from src.models.sql import User, Room, Task, Order, TaskExecutor, Invitation, Rule
 from src.schemas.method_output_schemas import TaskInfoResponse
 
 client = TestClient(app)
@@ -48,6 +48,7 @@ async def setup_data_in_db():
 
         session.add(Invitation(1, 1, "alias3", 1))
         session.add(Invitation(2, 1, "alias4", 2))
+        await session.flush()
 
         session.add(Order(1, 1))
         session.add(Order(2, 2))
@@ -63,10 +64,13 @@ async def setup_data_in_db():
         session.add(Task(2, "task2", "bla-bla", 2, datetime.now() - timedelta(hours=12), 1, None))
         await session.flush()
 
+        session.add(Rule(1, "rule1", "text1", 1))
+        await session.flush()
+
         await session.commit()
 
         if "postgresql" in get_settings().DB_URL:
-            for table in ("rooms", "invitations", "orders", "tasks"):
+            for table in ("rooms", "invitations", "orders", "tasks", "rules"):
                 await session.execute(
                     text(
                         f"SELECT setval(pg_get_serial_sequence('{table}', 'id'), ( SELECT MAX(id) FROM {table} ) + 1);"
@@ -235,6 +239,24 @@ def test_list_of_orders_user_not_exist():
     assert r.json()["code"] == 102
 
 
+def test_create_rule_user_not_exist():
+    r = post("/bot/rule/create", {"user_id": 0, "rule": {"name": "test", "text": "test"}})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 102
+
+
+def test_edit_rule_user_not_exist():
+    r = post("/bot/rule/edit", {"user_id": 0, "rule": {"id": 0, "name": "test", "text": "test"}})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 102
+
+
+def test_delete_rule_user_not_exist():
+    r = post("/bot/rule/delete", {"user_id": 0, "rule_id": 0})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 102
+
+
 #############################
 
 
@@ -344,6 +366,24 @@ def test_order_in_use_user_has_no_room():
 
 def test_list_of_orders_user_has_no_room():
     r = post("/bot/room/list_of_orders", {"user_id": 3})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 105
+
+
+def test_create_rule_user_has_no_room():
+    r = post("/bot/rule/create", {"user_id": 3, "rule": {"name": "test", "text": "test"}})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 105
+
+
+def test_edit_rule_user_has_no_room():
+    r = post("/bot/rule/edit", {"user_id": 3, "rule": {"id": 0, "name": "test", "text": "test"}})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 105
+
+
+def test_delete_rule_user_has_no_room():
+    r = post("/bot/rule/delete", {"user_id": 3, "rule_id": 0})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 105
 
@@ -589,6 +629,30 @@ def test_order_in_use_not_exist():
 
 def test_order_in_use_not_yours_order():
     r = post("/bot/order/is_in_use", {"user_id": 1, "order_id": 2})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 117
+
+
+def test_edit_rule_not_exist():
+    r = post("/bot/rule/edit", {"user_id": 1, "rule": {"id": 0, "text": "test"}})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 120
+
+
+def test_edit_rule_not_yours_rule():
+    r = post("/bot/rule/edit", {"user_id": 4, "rule": {"id": 1, "text": "test"}})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 117
+
+
+def test_delete_rule_not_exist():
+    r = post("/bot/rule/delete", {"user_id": 1, "rule_id": 0})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 120
+
+
+def test_delete_rule_not_yours_rule():
+    r = post("/bot/rule/delete", {"user_id": 4, "rule_id": 1})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 117
 
@@ -968,3 +1032,31 @@ def test_list_of_orders():
         and r.json()["orders"] == {"2": [4], "3": [4]}
         and (len(users := r.json()["users"]) == 1 and users[0] == {"id": 4, "alias": None, "fullname": None})
     )
+
+
+@pytest.mark.asyncio
+async def test_create_rule():
+    r = post("/bot/rule/create", {"user_id": 1, "rule": {"name": "test", "text": "test"}})
+    assert r.status_code == 200 and isinstance(r.json(), int)
+    async with session_maker.get_session() as db:
+        assert (rule := await db.get(Rule, r.json())) is not None
+        assert rule.name == "test"
+        assert rule.text == "test"
+
+
+@pytest.mark.asyncio
+async def test_edit_rule():
+    r = post("/bot/rule/edit", {"user_id": 1, "rule": {"id": 1, "name": "test", "text": "test2"}})
+    assert r.status_code == 200
+    async with session_maker.get_session() as db:
+        assert (rule := await db.get(Rule, 1)) is not None
+        assert rule.name == "test"
+        assert rule.text == "test2"
+
+
+@pytest.mark.asyncio
+async def test_delete_rule():
+    r = post("/bot/rule/delete", {"user_id": 1, "rule_id": 1})
+    assert r.status_code == 200
+    async with session_maker.get_session() as db:
+        assert await db.get(Rule, 1) is None
