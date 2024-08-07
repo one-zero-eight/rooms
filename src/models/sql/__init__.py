@@ -5,5 +5,6 @@ from src.models.sql.task import Task
 from src.models.sql.order import Order
 from src.models.sql.task_executor import TaskExecutor
 from src.models.sql.rule import Rule
+from .manual_task import ManualTask
 
-__all__ = ["User", "Room", "Invitation", "Task", "Order", "TaskExecutor", "Rule"]
+__all__ = ["User", "Room", "Invitation", "Task", "Order", "TaskExecutor", "Rule", "ManualTask"]

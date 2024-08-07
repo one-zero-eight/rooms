@@ -17,7 +17,7 @@ from src.api.exceptions import (
     RuleNotExistException,
 )
 from src.db_sessions import DB_SESSION_DEPENDENCY
-from src.models.sql import User, Room, Order, Task, Invitation, Rule
+from src.models.sql import User, Room, Order, Task, Invitation, Rule, ManualTask
 
 
 async def check_user_not_exists(user_id: int, db: AsyncSession):
@@ -94,3 +94,12 @@ async def check_rule_exists(rule_id: int, room_id: int, db: AsyncSession) -> Rul
         raise RoomOwningException("rule")
     # noinspection PyTypeChecker
     return rule
+
+
+async def check_manual_task_exists(task_id: int, room_id: int, db: AsyncSession) -> ManualTask:
+    if (task := await db.get(ManualTask, task_id)) is None:
+        raise TaskNotExistException()
+    if task.room_id != room_id:
+        raise RoomOwningException("manual task")
+    # noinspection PyTypeChecker
+    return task
