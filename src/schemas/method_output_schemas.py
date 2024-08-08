@@ -73,3 +73,9 @@ class OrderInfoResponse(BaseModel):
 class ListOfOrdersResponse(BaseModel):
     users: list[UserInfo]
     orders: dict[int, list[int]]
+
+
+class RuleInfo(BaseModel):
+    id: int
+    name: str
+    text: str

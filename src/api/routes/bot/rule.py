@@ -1,6 +1,7 @@
 from typing import Annotated
 
 from fastapi import APIRouter, Body
+from sqlalchemy import select
 
 from src.api.utils import (
     ROOM_DEPENDENCY,
@@ -12,6 +13,7 @@ from src.schemas.method_input_schemas import (
     CreateRuleBody,
     EditRuleBody,
 )
+from src.schemas.method_output_schemas import RuleInfo
 
 router = APIRouter(prefix="/rule")
 
@@ -22,6 +24,12 @@ async def create_rule(room: ROOM_DEPENDENCY, rule: CreateRuleBody, db: DB_SESSIO
     db.add(rule_obj)
     await db.commit()
     return rule_obj.id
+
+
+@router.post("/list", response_description="List of rules")
+async def list_rules(room: ROOM_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> list[RuleInfo]:
+    rules: list[Rule] = await db.scalars(select(Rule).where(room_id=room.id)).all()
+    return [RuleInfo.model_validate(rule, from_attributes=True) for rule in rules]
 
 
 @router.post("/edit")
