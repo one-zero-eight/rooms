@@ -14,7 +14,8 @@ from src.api.utils import (
 )
 from src.config import SETTINGS_DEPENDENCY
 from src.db_sessions import DB_SESSION_DEPENDENCY
-from src.models.sql import ManualTask, TaskExecutor
+from src.models.sql import ManualTask, TaskExecutor, User
+from src.schemas.method_output_schemas import UserInfo
 from .exceptions import ManualTaskIsInactiveException
 from .input_schemas import (
     CreateManualTaskBody,
@@ -25,6 +26,7 @@ from .output_schemas import (
     ManualTaskListResponse,
     ManualTaskInfo,
     ManualTaskInfoResponse,
+    ManualTaskCurrentResponse,
 )
 
 router = APIRouter(prefix="/manual_task")
@@ -87,7 +89,7 @@ async def get_manual_tasks(room: ROOM_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> 
 
 @router.post("/info", response_description="The task's details")
 async def get_manual_task_info(
-    room: ROOM_DEPENDENCY, task_id: Annotated[int, Body(alias="task")], db: DB_SESSION_DEPENDENCY
+    room: ROOM_DEPENDENCY, task_id: Annotated[int, Body()], db: DB_SESSION_DEPENDENCY
 ) -> ManualTaskInfoResponse:
     task = await check_manual_task_exists(task_id, room.id, db)
     response = ManualTaskInfoResponse(
@@ -114,3 +116,15 @@ async def do_manual_task(room: ROOM_DEPENDENCY, task_id: Annotated[int, Body()],
     executor_count = await db.scalar(select(count()).where(TaskExecutor.order_id == task.order_id))
     task.counter = (task.counter + 1) % executor_count
     await db.commit()
+
+
+@router.post("/current")
+async def get_current_executor(
+    room: ROOM_DEPENDENCY, task_id: Annotated[int, Body()], db: DB_SESSION_DEPENDENCY
+) -> ManualTaskCurrentResponse:
+    task: ManualTask = await check_manual_task_exists(task_id, room.id, db)
+    executor: TaskExecutor = await db.get_one(TaskExecutor, (task.order_id, task.counter))
+    current: User = await db.get_one(User, executor.user_id)
+    return ManualTaskCurrentResponse(
+        number=task.counter, user=UserInfo(id=current.id, alias=current.alias, fullname=current.fullname)
+    )
