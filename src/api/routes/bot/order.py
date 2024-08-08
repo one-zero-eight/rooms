@@ -50,8 +50,7 @@ async def create_order(
     db.add(order)
     await db.flush()
     for i, user in enumerate(order_list):
-        executor = TaskExecutor(user_id=user.id, order_number=i)
-        executor.order_id = order.id
+        executor = TaskExecutor(user_id=user.id, order_id=order.id, order_number=i)
         db.add(executor)
 
     await db.commit()

@@ -1003,8 +1003,8 @@ async def test_delete_order():
     assert r.status_code == 200 and r.json()
     async with session_maker.get_session() as db:
         assert (await db.get(Order, 1)) is None
-        assert (await db.get(TaskExecutor, (2, 1, 0))) is None
-        assert (await db.get(TaskExecutor, (1, 1, 1))) is None
+        assert (await db.get(TaskExecutor, (1, 0))) is None
+        assert (await db.get(TaskExecutor, (1, 1))) is None
 
 
 def test_order_in_use():

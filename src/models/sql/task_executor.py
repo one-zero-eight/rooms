@@ -1,4 +1,4 @@
-from sqlalchemy import UniqueConstraint, ForeignKey, Column, BigInteger
+from sqlalchemy import ForeignKey, Column, BigInteger
 from sqlmodel import SQLModel, Field
 
 # if typing.TYPE_CHECKING:
@@ -8,14 +8,13 @@ from sqlmodel import SQLModel, Field
 
 class TaskExecutor(SQLModel, table=True):
     __tablename__ = "executors"
-    __table_args__ = (UniqueConstraint("order_id", "order_number"),)
+    # __table_args__ = (UniqueConstraint("order_id", "order_number"),)
 
     user_id: int = Field(
         sa_column=Column(
             BigInteger(),
             ForeignKey("users.id", onupdate="CASCADE", ondelete="CASCADE"),
-            autoincrement=False,
-            primary_key=True,
+            nullable=False,
         )
     )
     order_id: int = Field(
