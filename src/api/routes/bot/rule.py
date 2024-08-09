@@ -28,7 +28,7 @@ async def create_rule(room: ROOM_DEPENDENCY, rule: CreateRuleBody, db: DB_SESSIO
 
 @router.post("/list", response_description="List of rules")
 async def list_rules(room: ROOM_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> list[RuleInfo]:
-    rules: list[Rule] = await db.scalars(select(Rule).where(room_id=room.id)).all()
+    rules: list[Rule] = (await db.scalars(select(Rule).where(Rule.room_id == room.id))).all()
     return [RuleInfo.model_validate(rule, from_attributes=True) for rule in rules]
 
 
