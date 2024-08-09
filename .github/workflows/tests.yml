@@ -78,6 +78,6 @@ jobs:
       run: |
         source .venv/bin/activate
         set -a && source $ENV_FILE && set +a
-        alembic upgrade head
-        pytest tests/ -vv --color=yes
+        poetry run alembic upgrade head
+        poetry run pytest tests/ -vv --color=yes
     # only second test works without SERIAL sequence synchronization errors (why ???)
