@@ -24,7 +24,7 @@ from .input_schemas import (
 )
 from .output_schemas import (
     ManualTaskListResponse,
-    ManualTaskInfo,
+    ManualTaskBriefInfo,
     ManualTaskInfoResponse,
     ManualTaskCurrentResponse,
 )
@@ -82,7 +82,7 @@ async def get_manual_tasks(room: ROOM_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> 
     response = ManualTaskListResponse(tasks=[])
     tasks: Iterable[ManualTask] = await db.scalars(select(ManualTask).where(ManualTask.room_id == room.id))
     for task in tasks:
-        response.tasks.append(ManualTaskInfo(id=task.id, name=task.name))
+        response.tasks.append(ManualTaskBriefInfo(id=task.id, name=task.name, inactive=task.order_id is None))
 
     return response
 

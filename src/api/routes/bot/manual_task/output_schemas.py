@@ -3,13 +3,14 @@ from pydantic import BaseModel
 from src.schemas.method_output_schemas import UserInfo
 
 
-class ManualTaskInfo(BaseModel):
+class ManualTaskBriefInfo(BaseModel):
     id: int
     name: str
+    inactive: bool
 
 
 class ManualTaskListResponse(BaseModel):
-    tasks: list[ManualTaskInfo]
+    tasks: list[ManualTaskBriefInfo]
 
 
 class ManualTaskInfoResponse(BaseModel):
