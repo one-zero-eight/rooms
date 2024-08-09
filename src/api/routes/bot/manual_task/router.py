@@ -118,7 +118,7 @@ async def do_manual_task(room: ROOM_DEPENDENCY, task_id: Annotated[int, Body()],
     await db.commit()
 
 
-@router.post("/current")
+@router.post("/current_executor")
 async def get_current_executor(
     room: ROOM_DEPENDENCY, task_id: Annotated[int, Body()], db: DB_SESSION_DEPENDENCY
 ) -> ManualTaskCurrentResponse:
