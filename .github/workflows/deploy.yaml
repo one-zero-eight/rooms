@@ -1,0 +1,59 @@
+name: Deploy
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        type: environment
+        required: true
+
+jobs:
+  deploy-staging:
+    if: github.repository_owner == 'one-zero-eight' && ((github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'staging') || (github.event_name == 'push' && github.ref == 'refs/heads/main'))
+    name: Deploy to staging server
+    runs-on: self-hosted
+    environment:
+      name: staging
+      url: https://t.me/innohassle_rooms_bot
+    concurrency:
+      group: staging
+      cancel-in-progress: false
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          fingerprint: ${{ secrets.SSH_FINGERPRINT }}
+          script_stop: true # Stop script on error
+          script: |
+            cd "${{ secrets.DEPLOY_DIRECTORY }}"
+            bash "${{ secrets.DEPLOY_SCRIPT }}"
+
+  deploy-production:
+    if: github.repository_owner == 'one-zero-eight' && (github.event_name == 'workflow_dispatch' && github.event.inputs.environment == 'production')
+    name: Deploy to production server
+    runs-on: self-hosted
+    environment:
+      name: production
+      url: https://t.me/IURoomsBot
+    concurrency:
+      group: production
+      cancel-in-progress: false
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          fingerprint: ${{ secrets.SSH_FINGERPRINT }}
+          script_stop: true # Stop script on error
+          script: |
+            cd "${{ secrets.DEPLOY_DIRECTORY }}"
+            bash "${{ secrets.DEPLOY_SCRIPT }}"
