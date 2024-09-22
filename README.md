@@ -4,7 +4,7 @@
 
 ### Getting started
 
-1. Install Python 3.11+
+1. Install Python 3.12
 
 2. Install Poetry
 

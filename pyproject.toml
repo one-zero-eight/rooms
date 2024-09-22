@@ -4,29 +4,27 @@ version = "0.1.0"
 description = "A service for task management in rooms"
 authors = ["Maxim Fomin <m.fomin@innopolis.university>"]
 readme = "README.md"
-packages = []
+package-mode = false
 
 [tool.poetry.dependencies]
-python = "~3.11.7"
+python = "^3.12"
+alembic = "^1.12.1"
+asyncpg = "^0"
+black = "24.4.2"
 fastapi = "^0"
-uvicorn = "^0"
-sqlalchemy = {extras = ["asyncio"], version = "^2.0.30"}
+httpx = "^0"
+pre-commit = "^3.3.3"
+psycopg = {extras = ["binary", "pool"], version = "^3.1.19"}
 pydantic = "^2.7.1"
 pydantic-settings = "^2.0.3"
-alembic = "^1.12.1"
-wheel = "^0"
-python-jose = {extras = ["cryptography"], version = "^3.3.0"}
-httpx = "^0"
-psycopg = {extras = ["binary", "pool"], version = "^3.1.19"}
-sqlmodel = "^0"
-asyncpg = "^0"
-
-[tool.poetry.group.dev.dependencies]
-ruff = "^0.3.2"
-black = "24.4.2"
-pre-commit = "^3.3.3"
 pytest = "^7.4.3"
 pytest-asyncio = "^0.23.3"
+python-jose = {extras = ["cryptography"], version = "^3.3.0"}
+ruff = "^0.3.2"
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.30"}
+sqlmodel = "^0"
+uvicorn = "^0"
+wheel = "^0"
 
 [tool.pytest.ini_options]
 pythonpath = "."
