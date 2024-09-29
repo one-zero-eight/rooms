@@ -33,20 +33,20 @@ ENV PATH="$POETRY_HOME/bin:$VENV_PATH/bin:$PATH"
 # `builder-base` stage is used to build deps + create our virtual environment
 FROM python-base AS builder-base
 RUN apt-get update && apt-get install --no-install-recommends -y \
-    # deps for installing poetry
-    curl \
     # deps for building python deps
-    build-essential
+    build-essential \
+    # deps for installing poetry
+    curl
 
 # install poetry - respects $POETRY_VERSION & $POETRY_HOME
-RUN curl -sSL https://install.python-poetry.org | python -
+RUN curl -sS https://install.python-poetry.org | python -
 
 # copy project requirement files here to ensure they will be cached.
 WORKDIR $PYSETUP_PATH
 COPY poetry.lock pyproject.toml ./
 
 # install runtime deps - uses $POETRY_VIRTUALENVS_IN_PROJECT internally
-RUN poetry install
+RUN poetry install --no-interaction
 
 
 # `production` image used for runtime
