@@ -5,7 +5,8 @@ from sqlalchemy import select
 from sqlalchemy.sql.functions import count
 
 from src.api.exceptions import (
-    TooManyTasksException, ManualTaskIsInactiveException,
+    TooManyTasksException,
+    ManualTaskIsInactiveException,
 )
 from src.api.utils import (
     ROOM_DEPENDENCY,
