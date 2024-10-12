@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.sql.functions import count
 
 from src.api.exceptions import (
-    TooManyTasksException,
+    TooManyTasksException, ManualTaskIsInactiveException,
 )
 from src.api.utils import (
     ROOM_DEPENDENCY,
@@ -16,7 +16,6 @@ from src.config import SETTINGS_DEPENDENCY
 from src.db_sessions import DB_SESSION_DEPENDENCY
 from src.models.sql import ManualTask, TaskExecutor, User
 from src.schemas.method_output_schemas import UserInfo
-from .exceptions import ManualTaskIsInactiveException
 from .input_schemas import (
     CreateManualTaskBody,
     ModifyManualTaskBody,

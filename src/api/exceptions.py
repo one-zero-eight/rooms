@@ -139,3 +139,8 @@ class UserOwningException(MyException):
 class RuleNotExistException(MyException):
     def __init__(self):
         super().__init__(status.HTTP_400_BAD_REQUEST, 120, "The rule is not found")
+
+
+class ManualTaskIsInactiveException(MyException):
+    def __init__(self):
+        super().__init__(status.HTTP_400_BAD_REQUEST, 121, "The manual task is inactive")
