@@ -170,3 +170,5 @@ cython_debug/
 
 # Ignore temporary files
 *.tmp
+
+db_password.txt
