@@ -16,12 +16,12 @@ httpx = "^0"
 pre-commit = "^4.0.1"
 psycopg = {extras = ["binary", "pool"], version = "^3.2.3"}
 pydantic = "^2.7.1"
-pydantic-settings = "^2.0.3"
+pydantic-settings = "^2.6.0"
 pytest = "^8.3.3"
 pytest-asyncio = "^0.24.0"
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
-ruff = "^0.6.9"
-sqlalchemy = {extras = ["asyncio"], version = "^2.0.30"}
+ruff = "^0.7.1"
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.36"}
 sqlmodel = "^0"
 uvicorn = "^0"
 wheel = "^0"
