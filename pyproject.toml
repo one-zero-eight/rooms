@@ -8,20 +8,20 @@ package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.12"
-alembic = "^1.13.3"
+alembic = "^1.14.0"
 asyncpg = "^0"
 black = "24.10.0"
 fastapi = "^0"
 httpx = "^0"
 pre-commit = "^4.0.1"
 psycopg = {extras = ["binary", "pool"], version = "^3.2.3"}
-pydantic = "^2.7.1"
-pydantic-settings = "^2.0.3"
+pydantic = "^2.10.1"
+pydantic-settings = "^2.6.1"
 pytest = "^8.3.3"
 pytest-asyncio = "^0.24.0"
 python-jose = {extras = ["cryptography"], version = "^3.3.0"}
-ruff = "^0.6.9"
-sqlalchemy = {extras = ["asyncio"], version = "^2.0.30"}
+ruff = "^0.8.0"
+sqlalchemy = {extras = ["asyncio"], version = "^2.0.36"}
 sqlmodel = "^0"
 uvicorn = "^0"
 wheel = "^0"
