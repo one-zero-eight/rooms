@@ -11,7 +11,7 @@ from src.config import get_settings
 from src.db_sessions.sqlalchemy_session import session_maker
 from src.main import app
 from src.models.sql import User, Room, Task, Order, TaskExecutor, Invitation, Rule
-from src.schemas.method_output_schemas import TaskInfoResponse
+from src.api.routes.bot.periodic_task.output_schemas import TaskInfoResponse
 
 client = TestClient(app)
 

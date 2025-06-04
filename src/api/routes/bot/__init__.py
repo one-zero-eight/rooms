@@ -5,7 +5,7 @@ from .invitation import router as invitation_router
 from .order import router as order_router
 from .room import router as room_router
 from .rule import router as rule_router
-from .task import router as task_router
+from .periodic_task import router as task_router
 from .user import router as user_router
 from .manual_task import router as manual_task_router
 
