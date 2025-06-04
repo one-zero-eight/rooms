@@ -94,7 +94,7 @@ async def get_tasks(room: ROOM_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> TaskLis
 
 @router.post("/info", response_description="The task's details")
 async def get_task_info(room: ROOM_DEPENDENCY, task: TaskInfoBody, db: DB_SESSION_DEPENDENCY) -> TaskInfoResponse:
-    task = await check_task_exists(task.id, room.id, db)
+    task: Task = await check_task_exists(task.id, room.id, db)
     response = TaskInfoResponse(
         name=task.name,
         description=task.description,

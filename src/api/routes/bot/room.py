@@ -49,7 +49,7 @@ async def get_daily_info(room: ROOM_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> Da
     for task in tasks:
         if task.is_inactive():
             continue
-        if (datetime.now() - task.start_date).days % task.period != 0:
+        if not task.is_today_duty(datetime.now()):
             continue
 
         # executors = task.order.executors
@@ -58,7 +58,7 @@ async def get_daily_info(room: ROOM_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> Da
                 select(TaskExecutor).order_by(TaskExecutor.order_number).where(TaskExecutor.order_id == task.order_id)
             )
         ).all()
-        i = (datetime.now() - task.start_date).days % len(executors)
+        i = task.get_today_executor_index(datetime.now(), len(executors))
 
         today_executor: TaskExecutor
         executor: TaskExecutor

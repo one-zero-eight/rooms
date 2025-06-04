@@ -57,7 +57,7 @@ async def setup_data_in_db():
 
         session.add(TaskExecutor(2, 1, 0))
         session.add(TaskExecutor(1, 1, 1))
-        session.add(Task(1, "task1", "bla-bla", 1, datetime.now() - timedelta(hours=12), 1, 1))
+        session.add(Task(1, "task1", "bla-bla", 1, datetime.now() - timedelta(days=2, hours=12), 2, 1))
 
         session.add(TaskExecutor(4, 2, 0))
         session.add(TaskExecutor(4, 3, 0))
@@ -803,8 +803,8 @@ def setup_some_tasks():
             "task": {
                 "name": "task1002",
                 "description": "description1002",
-                "start_date": (datetime.now().astimezone() - timedelta(days=1)).isoformat(),
-                "period": 1,
+                "start_date": (datetime.now().astimezone() - timedelta(days=2)).isoformat(),
+                "period": 2,
                 "order_id": order_id,
             },
         },
@@ -833,13 +833,25 @@ def setup_some_tasks():
             },
         },
     ).json()
+    task_not_today = post(
+        "/bot/task/create",
+        {
+            "user_id": 1001,
+            "task": {
+                "name": "task1005",
+                "start_date": (datetime.now().astimezone() - timedelta(days=1)).isoformat(),
+                "period": 2,
+                "order_id": order_id,
+            },
+        },
+    ).json()
 
-    return task1, task2, task_inactive_1, task_inactive_2
+    return task1, task2, task_inactive_1, task_inactive_2, task_not_today
 
 
 @pytest.mark.asyncio
 async def test_remove_task_parameters():
-    t1, t2, _, _ = setup_some_tasks()
+    t1, t2, _, _, _ = setup_some_tasks()
     r = post("/bot/task/remove_parameters", {"user_id": 1001, "task": {"id": t1, "order_id": True}})
     assert r.status_code == 200 and r.json() is True
     r = post("/bot/task/remove_parameters", {"user_id": 1001, "task": {"id": t2, "description": True}})
@@ -849,7 +861,7 @@ async def test_remove_task_parameters():
 
 
 def test_daily_info():
-    task1, task2, task_inactive_1, task_inactive_2 = setup_some_tasks()
+    task1, task2, _, _, _ = setup_some_tasks()
     r = post("/bot/room/daily_info", {"user_id": 1001})
     assert r.status_code == 200 and (
         len(tasks := r.json()["tasks"]) == 2
@@ -909,14 +921,15 @@ async def test_leave_room_delete_room():
 
 
 def test_get_task_list():
-    task1, task2, task_inactive_1, task_inactive_2 = setup_some_tasks()
+    task1, task2, task_inactive_1, task_inactive_2, task_not_today = setup_some_tasks()
     r = post("/bot/task/list", {"user_id": 1001})
     assert r.status_code == 200 and (
-        len(tasks := r.json()["tasks"]) == 4
+        len(tasks := r.json()["tasks"]) == 5
         and {"id": task1, "name": "task1001", "inactive": False} in tasks
         and {"id": task2, "name": "task1002", "inactive": False} in tasks
         and {"id": task_inactive_1, "name": "task1003", "inactive": True} in tasks
         and {"id": task_inactive_2, "name": "task1004", "inactive": True} in tasks
+        and {"id": task_not_today, "name": "task1005", "inactive": False} in tasks
     )
 
 
@@ -925,7 +938,7 @@ def test_get_task_info_active():
     assert r.status_code == 200
     t = TaskInfoResponse.model_validate(r.json())
     assert t == TaskInfoResponse(
-        name="task1", description="bla-bla", start_date=t.start_date, period=1, order_id=1, inactive=False
+        name="task1", description="bla-bla", start_date=t.start_date, period=2, order_id=1, inactive=False
     )
 
 

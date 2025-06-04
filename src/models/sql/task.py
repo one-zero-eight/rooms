@@ -49,3 +49,9 @@ class Task(SQLModel, table=True):
 
     def is_inactive(self) -> bool:
         return self.order_id is None or self.start_date > datetime.now()
+
+    def is_today_duty(self, now: datetime) -> bool:
+        return (now - self.start_date).days % self.period == 0
+
+    def get_today_executor_index(self, now: datetime, executors_count: int) -> int:
+        return (now - self.start_date).days // self.period % executors_count
