@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Annotated, Iterable
 
 from fastapi import APIRouter, Body
@@ -15,6 +16,9 @@ from src.api.utils import (
 from src.config import SETTINGS_DEPENDENCY
 from src.db_sessions import DB_SESSION_DEPENDENCY
 from src.models.sql import Task
+from src.models.sql.task_executor import TaskExecutor
+from src.models.sql.user import User
+from src.schemas.method_output_schemas import UserInfo
 from .input_schemas import (
     CreateTaskBody,
     ModifyTaskBody,
@@ -22,6 +26,8 @@ from .input_schemas import (
     RemoveTaskParametersBody,
 )
 from .output_schemas import (
+    TaskCurrent,
+    TaskCurrentResponse,
     TaskListResponse,
     TaskInfo,
     TaskInfoResponse,
@@ -113,3 +119,22 @@ async def delete_task(room: ROOM_DEPENDENCY, task_id: Annotated[int, Body()], db
     await db.delete(task)
     await db.commit()
     return True
+
+
+@router.post("/current_executor")
+async def get_current_executor(
+    room: ROOM_DEPENDENCY, task_id: Annotated[int, Body()], db: DB_SESSION_DEPENDENCY
+) -> TaskCurrentResponse:
+    task: Task = await check_task_exists(task_id, room.id, db)
+    if task.is_inactive() or not task.is_today_duty(datetime.now()):
+        return TaskCurrentResponse(current=None)
+
+    executors_count: int = await db.scalar(select(count()).where(TaskExecutor.order_id == task.order_id))
+    executor_index: int = task.get_today_executor_index(datetime.now(), executors_count)
+    executor: TaskExecutor = await db.get_one(TaskExecutor, (task.order_id, executor_index))
+    current: User = await db.get_one(User, executor.user_id)
+    return TaskCurrentResponse(
+        current=TaskCurrent(
+            number=executor_index, user=UserInfo(id=current.id, alias=current.alias, fullname=current.fullname)
+        )
+    )

@@ -257,6 +257,18 @@ def test_delete_rule_user_not_exist():
     assert r.json()["code"] == 102
 
 
+def test_manual_task_current_executor_user_not_exist():
+    r = post("/bot/manual_task/current_executor", {"user_id": 0, "task_id": 0})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 102
+
+
+def test_task_current_executor_user_not_exist():
+    r = post("/bot/task/current_executor", {"user_id": 0, "task_id": 0})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 102
+
+
 #############################
 
 
@@ -384,6 +396,18 @@ def test_edit_rule_user_has_no_room():
 
 def test_delete_rule_user_has_no_room():
     r = post("/bot/rule/delete", {"user_id": 3, "rule_id": 0})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 105
+
+
+def test_manual_task_current_executor_user_has_no_room():
+    r = post("/bot/manual_task/current_executor", {"user_id": 3, "task_id": 0})
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 105
+
+
+def test_task_current_executor_user_has_no_room():
+    r = post("/bot/task/current_executor", {"user_id": 3, "task_id": 0})
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 105
 
@@ -517,6 +541,24 @@ def test_get_task_info_task_not_exist():
     r = post(
         "/bot/task/info",
         {"user_id": 1, "task": {"id": 0}},
+    )
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 108
+
+
+def test_task_current_executor_task_not_exist():
+    r = post(
+        "/bot/task/current_executor",
+        {"user_id": 1, "task_id": 0},
+    )
+    assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
+    assert r.json()["code"] == 108
+
+
+def test_manual_task_current_executor_task_not_exist():
+    r = post(
+        "/bot/manual_task/current_executor",
+        {"user_id": 1, "task_id": 0},
     )
     assert r.status_code == 400 and isinstance(r.json(), dict) and "code" in r.json()
     assert r.json()["code"] == 108
@@ -1073,3 +1115,12 @@ async def test_delete_rule():
     assert r.status_code == 200
     async with session_maker.get_session() as db:
         assert await db.get(Rule, 1) is None
+
+
+def test_task_current_executor():
+    r = post("/bot/task/current_executor", {"user_id": 1, "task_id": 1})
+    assert r.status_code == 200 and r.json() == {
+        "current": {"number": 1, "user": {"id": 1, "alias": "alias1", "fullname": "name1"}}
+    }
+    r = post("/bot/task/current_executor", {"user_id": 4, "task_id": 2})
+    assert r.status_code == 200 and r.json() == {"current": None}
