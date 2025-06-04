@@ -18,7 +18,7 @@ from src.db_sessions import DB_SESSION_DEPENDENCY
 from src.models.sql import Task
 from src.models.sql.task_executor import TaskExecutor
 from src.models.sql.user import User
-from src.schemas.method_output_schemas import UserInfo
+from src.schemas.method_output_schemas import UserInfo, TaskCurrent
 from .input_schemas import (
     CreateTaskBody,
     ModifyTaskBody,
@@ -26,7 +26,6 @@ from .input_schemas import (
     RemoveTaskParametersBody,
 )
 from .output_schemas import (
-    TaskCurrent,
     TaskCurrentResponse,
     TaskListResponse,
     TaskInfo,

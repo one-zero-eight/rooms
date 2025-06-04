@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Sequence, Iterable
+from typing import Iterable
 
 from fastapi import APIRouter
 from sqlalchemy import select, delete
@@ -14,6 +14,7 @@ from src.api.utils import (
 )
 from src.db_sessions import DB_SESSION_DEPENDENCY
 from src.models.sql import User, Room, Invitation, TaskExecutor, Order, Task
+from src.models.sql.manual_task import ManualTask
 from src.schemas.method_input_schemas import (
     CreateRoomBody,
 )
@@ -44,35 +45,36 @@ async def create_room(user: USER_DEPENDENCY, room: CreateRoomBody, db: DB_SESSIO
 
 @router.post("/daily_info", response_description="Statuses of the tasks of the room")
 async def get_daily_info(room: ROOM_DEPENDENCY, db: DB_SESSION_DEPENDENCY) -> DailyInfoResponse:
-    response = DailyInfoResponse(tasks=[])
-    tasks: Iterable[Task] = await db.scalars(select(Task).where(Task.room_id == room.id))
-    for task in tasks:
-        if task.is_inactive():
-            continue
-        if not task.is_today_duty(datetime.now()):
+    response = DailyInfoResponse(periodic_tasks=[], manual_tasks=[], user_info={})
+    users = set()
+
+    periodic_tasks: Iterable[Task] = await db.scalars(select(Task).where(Task.room_id == room.id))
+    for task in periodic_tasks:
+        if task.is_inactive() or not task.is_today_duty(datetime.now()):
             continue
 
         # executors = task.order.executors
-        executors: Sequence[TaskExecutor] = (
-            await db.scalars(
-                select(TaskExecutor).order_by(TaskExecutor.order_number).where(TaskExecutor.order_id == task.order_id)
-            )
-        ).all()
-        i = task.get_today_executor_index(datetime.now(), len(executors))
+        executors_count: int = await db.scalar(select(count()).where(TaskExecutor.order_id == task.order_id))
+        i = task.get_today_executor_index(datetime.now(), executors_count)
 
-        today_executor: TaskExecutor
-        executor: TaskExecutor
-        for executor in executors:
-            if executor.order_number == i:
-                today_executor = executor
-                break
-        else:
-            raise RuntimeError(f"Order number {i} is not found for task_id = {task.id}")
+        executor: TaskExecutor = await db.get_one(TaskExecutor, (task.order_id, i))
+        users.add(executor.user_id)
+        response.periodic_tasks.append(TaskDailyInfo(id=task.id, name=task.name, today_executor=executor.user_id))
 
-        executor_as_user: User = await db.get_one(User, today_executor.user_id)
-        executor_info = UserInfo.model_validate(executor_as_user, from_attributes=True)
-        response.tasks.append(TaskDailyInfo(id=task.id, name=task.name, today_executor=executor_info))
+    manual_tasks: Iterable[ManualTask] = await db.scalars(select(ManualTask).where(ManualTask.room_id == room.id))
+    for task in manual_tasks:
+        if task.is_inactive():
+            continue
 
+        # executors = task.order.executors
+        executor: TaskExecutor = await db.get_one(TaskExecutor, (task.order_id, task.counter))
+        users.add(executor.user_id)
+        response.manual_tasks.append(TaskDailyInfo(id=task.id, name=task.name, today_executor=executor.user_id))
+
+    response.user_info = {
+        u.id: UserInfo.model_validate(u, from_attributes=True)
+        for u in await db.scalars(select(User).where(User.id.in_(users)))
+    }
     return response
 
 

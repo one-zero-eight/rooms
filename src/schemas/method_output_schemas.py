@@ -10,11 +10,13 @@ class UserInfo(BaseModel):
 class TaskDailyInfo(BaseModel):
     id: int
     name: str
-    today_executor: UserInfo | None
+    today_executor: int
 
 
 class DailyInfoResponse(BaseModel):
-    tasks: list[TaskDailyInfo]
+    periodic_tasks: list[TaskDailyInfo]
+    manual_tasks: list[TaskDailyInfo]
+    user_info: dict[int, UserInfo]
 
 
 class IncomingInvitationInfo(BaseModel):
@@ -58,3 +60,8 @@ class RuleInfo(BaseModel):
     id: int
     name: str
     text: str
+
+
+class TaskCurrent(BaseModel):
+    number: int
+    user: UserInfo

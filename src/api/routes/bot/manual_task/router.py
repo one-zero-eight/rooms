@@ -16,7 +16,7 @@ from src.api.utils import (
 from src.config import SETTINGS_DEPENDENCY
 from src.db_sessions import DB_SESSION_DEPENDENCY
 from src.models.sql import ManualTask, TaskExecutor, User
-from src.schemas.method_output_schemas import UserInfo
+from src.schemas.method_output_schemas import TaskCurrent, UserInfo
 from .input_schemas import (
     CreateManualTaskBody,
     ModifyManualTaskBody,
@@ -123,8 +123,13 @@ async def get_current_executor(
     room: ROOM_DEPENDENCY, task_id: Annotated[int, Body()], db: DB_SESSION_DEPENDENCY
 ) -> ManualTaskCurrentResponse:
     task: ManualTask = await check_manual_task_exists(task_id, room.id, db)
+    if task.is_inactive():
+        return ManualTaskCurrentResponse(current=None)
+
     executor: TaskExecutor = await db.get_one(TaskExecutor, (task.order_id, task.counter))
     current: User = await db.get_one(User, executor.user_id)
     return ManualTaskCurrentResponse(
-        number=task.counter, user=UserInfo(id=current.id, alias=current.alias, fullname=current.fullname)
+        current=TaskCurrent(
+            number=task.counter, user=UserInfo(id=current.id, alias=current.alias, fullname=current.fullname)
+        )
     )

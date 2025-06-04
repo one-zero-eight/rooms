@@ -887,13 +887,23 @@ def setup_some_tasks():
             },
         },
     ).json()
+    task_manual = post(
+        "/bot/manual_task/create",
+        {
+            "user_id": 1001,
+            "task": {
+                "name": "manual_task_1",
+                "order_id": order_id,
+            },
+        },
+    ).json()
 
-    return task1, task2, task_inactive_1, task_inactive_2, task_not_today
+    return task1, task2, task_inactive_1, task_inactive_2, task_not_today, task_manual
 
 
 @pytest.mark.asyncio
 async def test_remove_task_parameters():
-    t1, t2, _, _, _ = setup_some_tasks()
+    t1, t2, _, _, _, _ = setup_some_tasks()
     r = post("/bot/task/remove_parameters", {"user_id": 1001, "task": {"id": t1, "order_id": True}})
     assert r.status_code == 200 and r.json() is True
     r = post("/bot/task/remove_parameters", {"user_id": 1001, "task": {"id": t2, "description": True}})
@@ -903,14 +913,26 @@ async def test_remove_task_parameters():
 
 
 def test_daily_info():
-    task1, task2, _, _, _ = setup_some_tasks()
+    task1, task2, _, _, _, manual = setup_some_tasks()
     r = post("/bot/room/daily_info", {"user_id": 1001})
-    assert r.status_code == 200 and (
-        len(tasks := r.json()["tasks"]) == 2
-        and {"id": task1, "name": "task1001", "today_executor": {"id": 1001, "alias": None, "fullname": "fullname1001"}}
-        in tasks
-        and {"id": task2, "name": "task1002", "today_executor": {"id": 1002, "alias": "alias1002", "fullname": None}}
-        in tasks
+    assert (
+        r.status_code == 200
+        and (
+            len(tasks := r.json()["periodic_tasks"]) == 2
+            and {"id": task1, "name": "task1001", "today_executor": 1001} in tasks
+            and {"id": task2, "name": "task1002", "today_executor": 1002} in tasks
+        )
+        and (
+            len(tasks := r.json()["manual_tasks"]) == 1
+            and {"id": manual, "name": "manual_task_1", "today_executor": 1001}
+        )
+        and (
+            r.json()["user_info"]
+            == {
+                "1001": {"id": 1001, "alias": None, "fullname": "fullname1001"},
+                "1002": {"id": 1002, "alias": "alias1002", "fullname": None},
+            }
+        )
     )
 
 
@@ -963,7 +985,7 @@ async def test_leave_room_delete_room():
 
 
 def test_get_task_list():
-    task1, task2, task_inactive_1, task_inactive_2, task_not_today = setup_some_tasks()
+    task1, task2, task_inactive_1, task_inactive_2, task_not_today, _ = setup_some_tasks()
     r = post("/bot/task/list", {"user_id": 1001})
     assert r.status_code == 200 and (
         len(tasks := r.json()["tasks"]) == 5

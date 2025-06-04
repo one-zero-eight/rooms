@@ -37,3 +37,6 @@ class ManualTask(SQLModel, table=True):
             counter=counter,
             order_id=order_id,
         )
+
+    def is_inactive(self) -> bool:
+        return self.order_id is None

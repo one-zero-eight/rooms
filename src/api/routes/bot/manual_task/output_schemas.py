@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-from src.schemas.method_output_schemas import UserInfo
+from src.schemas.method_output_schemas import TaskCurrent
 
 
 class ManualTaskBriefInfo(BaseModel):
@@ -20,5 +20,4 @@ class ManualTaskInfoResponse(BaseModel):
 
 
 class ManualTaskCurrentResponse(BaseModel):
-    number: int
-    user: UserInfo
+    current: TaskCurrent | None
