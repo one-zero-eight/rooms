@@ -1,6 +1,6 @@
 # Dockerfile from https://github.com/python-poetry/poetry/discussions/1879
 # `python-base` sets up all our shared environment variables
-FROM python:3.12-slim-bookworm AS python-base
+FROM python:3.13-slim-bookworm AS python-base
 ENV PYTHONUNBUFFERED=1 \
     # prevents python creating .pyc as files
     PYTHONDONTWRITEBYTECODE=1 \
